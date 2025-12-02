@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat    = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Workflow {
+  id         String             @id @default(uuid())
+  name       String             @unique
+  definition Json
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  instances  WorkflowInstance[]
+}
+
+model WorkflowInstance {
+  id         String   @id @default(uuid())
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  tasks      Task[]
+}
+
+model Task {
+  id                 String       @id @default(uuid())
+  workflowInstanceId String
+  workflowInstance   WorkflowInstance @relation(fields: [workflowInstanceId], references: [id])
+  payload            Json
+  scheduledAt        DateTime?
+  startedAt          DateTime?
+  finishedAt         DateTime?
+}
