@@ -1,14 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/workflow-manager/src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "webpack": true,
-    "tsConfigPath": "apps/workflow-manager/tsconfig.app.json"
+    "webpack": true
   },
   "monorepo": true,
-  "root": "apps/workflow-manager",
   "projects": {
     "api": {
       "type": "application",
@@ -19,13 +16,13 @@
         "tsConfigPath": "apps/api/tsconfig.app.json"
       }
     },
-    "coordinator": {
+    "worker": {
       "type": "application",
-      "root": "apps/coordinator",
+      "root": "apps/worker",
       "entryFile": "main",
-      "sourceRoot": "apps/coordinator/src",
+      "sourceRoot": "apps/worker/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/coordinator/tsconfig.app.json"
+        "tsConfigPath": "apps/worker/tsconfig.app.json"
       }
     },
     "core": {
@@ -35,24 +32,6 @@
       "sourceRoot": "libs/core/src",
       "compilerOptions": {
         "tsConfigPath": "libs/core/tsconfig.lib.json"
-      }
-    },
-    "workflow-manager": {
-      "type": "application",
-      "root": "apps/workflow-manager",
-      "entryFile": "main",
-      "sourceRoot": "apps/workflow-manager/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/workflow-manager/tsconfig.app.json"
-      }
-    },
-    "worker": {
-      "type": "application",
-      "root": "apps/worker",
-      "entryFile": "main",
-      "sourceRoot": "apps/worker/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/worker/tsconfig.app.json"
       }
     }
   }
