@@ -1,12 +1,12 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiService } from './api.service';
+import { Controller, Post, Body, Param } from '@nestjs/common';
+import { WorkflowService } from './workflow.service';
 
-@Controller()
+@Controller('workflows')
 export class ApiController {
-  constructor(private readonly apiService: ApiService) {}
+  constructor(private readonly workflowService: WorkflowService) { }
 
-  @Get()
-  getHello(): string {
-    return this.apiService.getHello();
+  @Post(':id/start')
+  async startWorkflow(@Param('id') id: string, @Body() body: { payload: any }) {
+    return this.workflowService.startWorkflow(id, body.payload);
   }
 }

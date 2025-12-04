@@ -1,3 +1,9 @@
+-- CreateEnum
+CREATE TYPE "WorkflowInstanceStatus" AS ENUM ('RUNNING', 'SUCCEEDED', 'FAILED');
+
+-- CreateEnum
+CREATE TYPE "TaskStatus" AS ENUM ('PENDING', 'RUNNING', 'SUCCEEDED', 'FAILED');
+
 -- CreateTable
 CREATE TABLE "Workflow" (
     "id" TEXT NOT NULL,
@@ -13,6 +19,7 @@ CREATE TABLE "Workflow" (
 CREATE TABLE "WorkflowInstance" (
     "id" TEXT NOT NULL,
     "workflowId" TEXT NOT NULL,
+    "status" "WorkflowInstanceStatus" NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -23,12 +30,39 @@ CREATE TABLE "WorkflowInstance" (
 CREATE TABLE "Task" (
     "id" TEXT NOT NULL,
     "workflowInstanceId" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
     "payload" JSONB NOT NULL,
+    "status" "TaskStatus" NOT NULL,
+    "attempt" INTEGER NOT NULL DEFAULT 0,
+    "maxAttempts" INTEGER NOT NULL DEFAULT 3,
+    "idempotencyKey" TEXT,
     "scheduledAt" TIMESTAMP(3),
     "startedAt" TIMESTAMP(3),
     "finishedAt" TIMESTAMP(3),
+    "lastError" TEXT,
 
     CONSTRAINT "Task_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TaskLog" (
+    "id" TEXT NOT NULL,
+    "taskId" TEXT NOT NULL,
+    "level" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "TaskLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "RetryEntry" (
+    "id" TEXT NOT NULL,
+    "taskId" TEXT NOT NULL,
+    "scheduledAt" TIMESTAMP(3) NOT NULL,
+    "attempt" INTEGER NOT NULL,
+
+    CONSTRAINT "RetryEntry_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -39,3 +73,9 @@ ALTER TABLE "WorkflowInstance" ADD CONSTRAINT "WorkflowInstance_workflowId_fkey"
 
 -- AddForeignKey
 ALTER TABLE "Task" ADD CONSTRAINT "Task_workflowInstanceId_fkey" FOREIGN KEY ("workflowInstanceId") REFERENCES "WorkflowInstance"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TaskLog" ADD CONSTRAINT "TaskLog_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "Task"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RetryEntry" ADD CONSTRAINT "RetryEntry_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "Task"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
