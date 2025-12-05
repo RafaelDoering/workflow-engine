@@ -81,4 +81,24 @@ export class TaskStateService {
       }
     }
   }
+
+  async markTaskDeadLetter(task: Task, error: Error): Promise<void> {
+    task.status = TaskStatus.DEAD_LETTER;
+    task.finishedAt = new Date();
+    task.lastError = error.message;
+    await this.taskRepository.saveTask(task);
+    await this.taskLogRepository.createLog(
+      task.id,
+      'ERROR',
+      `Moved to dead letter: ${error.message}`,
+    );
+
+    const instance = await this.instanceRepository.findWorkflowInstanceById(
+      task.instanceId,
+    );
+    if (instance) {
+      instance.status = WorkflowInstanceStatus.FAILED;
+      await this.instanceRepository.saveWorkflowInstance(instance);
+    }
+  }
 }

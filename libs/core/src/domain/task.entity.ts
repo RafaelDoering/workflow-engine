@@ -44,6 +44,7 @@ export enum TaskStatus {
   RUNNING = 'RUNNING',
   SUCCEEDED = 'SUCCEEDED',
   FAILED = 'FAILED',
+  DEAD_LETTER = 'DEAD_LETTER',
 }
 
 export class Task {

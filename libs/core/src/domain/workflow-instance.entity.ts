@@ -2,6 +2,7 @@ export enum WorkflowInstanceStatus {
   RUNNING = 'RUNNING',
   SUCCEEDED = 'SUCCEEDED',
   FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
 }
 
 export class WorkflowInstance {

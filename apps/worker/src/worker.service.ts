@@ -1,6 +1,6 @@
 import { Injectable, Inject, OnModuleInit } from '@nestjs/common';
 import { KafkaConsumer } from '@app/core/adapters/kafka.consumer';
-import { TaskPayload } from '@app/core/domain/task.entity';
+import { TaskPayload, TaskStatus } from '@app/core/domain/task.entity';
 import { TaskExecutor } from './task-executor.service';
 import { TaskStateService } from './task-state.service';
 import { TaskChainService } from './task-chain.service';
@@ -54,6 +54,18 @@ export class WorkerService implements OnModuleInit {
         return;
       }
 
+      // Idempotency check - skip if already completed
+      if (
+        task.status === TaskStatus.SUCCEEDED ||
+        task.status === TaskStatus.FAILED ||
+        task.status === TaskStatus.DEAD_LETTER
+      ) {
+        console.log(
+          `[WorkerService] Skipping task ${message.taskId} - already ${task.status}`,
+        );
+        return;
+      }
+
       await this.taskState.markTaskRunning(task);
       const result = await this.taskExecutor.execute(
         message.type,
@@ -75,9 +87,9 @@ export class WorkerService implements OnModuleInit {
       if (task.attempt < task.maxAttempts - 1) {
         await this.taskState.scheduleRetry(task, error as Error);
       } else {
-        await this.taskState.markTaskFailed(task, error as Error);
+        await this.taskState.markTaskDeadLetter(task, error as Error);
         console.log(
-          `[WorkerService] Task ${message.taskId} failed permanently after ${task.attempt + 1} attempts`,
+          `[WorkerService] Task ${message.taskId} moved to dead letter after ${task.attempt + 1} attempts`,
         );
       }
     }

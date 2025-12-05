@@ -177,4 +177,47 @@ describe('TaskStateService', () => {
       );
     });
   });
+
+  describe('markTaskDeadLetter', () => {
+    it('should mark task DEAD_LETTER and log', async () => {
+      const task = new Task(
+        'task-1',
+        'instance-1',
+        'fetch-orders',
+        { orderId: 'ORD-1' },
+        TaskStatus.RUNNING,
+        2,
+        3,
+        null,
+        null,
+        new Date(),
+        null,
+        null,
+      );
+
+      const instance = new WorkflowInstance(
+        'instance-1',
+        'workflow-1',
+        WorkflowInstanceStatus.RUNNING,
+        new Date(),
+        new Date(),
+      );
+
+      mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(
+        instance,
+      );
+
+      await service.markTaskDeadLetter(task, new Error('Permanent failure'));
+
+      expect(task.status).toBe(TaskStatus.DEAD_LETTER);
+      expect(task.finishedAt).toBeInstanceOf(Date);
+      expect(mockTaskLogRepository.createLog).toHaveBeenCalledWith(
+        task.id,
+        'ERROR',
+        expect.stringContaining('dead letter'),
+      );
+      expect(instance.status).toBe(WorkflowInstanceStatus.FAILED);
+      expect(mockInstanceRepository.saveWorkflowInstance).toHaveBeenCalled();
+    });
+  });
 });

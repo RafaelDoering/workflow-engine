@@ -24,12 +24,14 @@ describe('WorkflowService', () => {
     mockInstanceRepository = {
       saveWorkflowInstance: mockInstanceRepositorySaveWorkflowInstance,
       findWorkflowInstanceById: jest.fn(),
+      findByWorkflowId: jest.fn(),
     };
 
     mockTaskRepositorySaveTask = jest.fn();
     mockTaskRepository = {
       saveTask: mockTaskRepositorySaveTask,
       findByInstanceId: jest.fn(),
+      findRetryableTasks: jest.fn(),
     };
 
     mockQueuePublish = jest.fn();
@@ -101,6 +103,56 @@ describe('WorkflowService', () => {
       expect(savedTask.status).toBe(TaskStatus.PENDING);
       expect(savedTask.attempt).toBe(0);
       expect(savedTask.maxAttempts).toBe(3);
+    });
+  });
+
+  describe('cancelInstance', () => {
+    it('should cancel a running workflow instance', async () => {
+      const instance = new WorkflowInstance(
+        'instance-1',
+        'workflow-1',
+        WorkflowInstanceStatus.RUNNING,
+        new Date(),
+        new Date(),
+      );
+
+      (
+        mockInstanceRepository.findWorkflowInstanceById as jest.Mock
+      ).mockResolvedValue(instance);
+
+      const result = await service.cancelInstance('instance-1');
+
+      expect(result).toEqual({ success: true });
+      expect(instance.status).toBe(WorkflowInstanceStatus.CANCELLED);
+      expect(mockInstanceRepositorySaveWorkflowInstance).toHaveBeenCalled();
+    });
+
+    it('should return success: false if instance not found', async () => {
+      (
+        mockInstanceRepository.findWorkflowInstanceById as jest.Mock
+      ).mockResolvedValue(null);
+
+      const result = await service.cancelInstance('missing-instance');
+
+      expect(result).toEqual({ success: false });
+    });
+
+    it('should return success: false if instance not running', async () => {
+      const instance = new WorkflowInstance(
+        'instance-1',
+        'workflow-1',
+        WorkflowInstanceStatus.SUCCEEDED,
+        new Date(),
+        new Date(),
+      );
+
+      (
+        mockInstanceRepository.findWorkflowInstanceById as jest.Mock
+      ).mockResolvedValue(instance);
+
+      const result = await service.cancelInstance('instance-1');
+
+      expect(result).toEqual({ success: false });
     });
   });
 });

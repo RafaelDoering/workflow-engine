@@ -83,4 +83,18 @@ export class WorkflowService {
     const tasks = await this.taskRepository.findByInstanceId(instanceId);
     return { instance, tasks };
   }
+
+  async cancelInstance(instanceId: string): Promise<{ success: boolean }> {
+    const instance =
+      await this.instanceRepository.findWorkflowInstanceById(instanceId);
+    if (!instance) return { success: false };
+
+    if (instance.status !== WorkflowInstanceStatus.RUNNING) {
+      return { success: false };
+    }
+
+    instance.status = WorkflowInstanceStatus.CANCELLED;
+    await this.instanceRepository.saveWorkflowInstance(instance);
+    return { success: true };
+  }
 }

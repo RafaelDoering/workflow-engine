@@ -37,6 +37,7 @@ enum WorkflowInstanceStatus {
   RUNNING
   SUCCEEDED
   FAILED
+  CANCELLED
 }
 
 model Task {
@@ -62,6 +63,7 @@ enum TaskStatus {
   RUNNING
   SUCCEEDED
   FAILED
+  DEAD_LETTER
 }
 
 model TaskLog {
