@@ -3,6 +3,7 @@ import { Task, TaskStatus } from '@app/core/domain/task.entity';
 import { WorkflowInstanceStatus } from '@app/core/domain/workflow-instance.entity';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
 import type { WorkflowInstanceRepositoryPort } from '@app/core/ports/workflow-instance-repository.port';
+import type { TaskLogRepositoryPort } from '@app/core/ports/task-log-repository.port';
 
 @Injectable()
 export class TaskStateService {
@@ -10,18 +11,26 @@ export class TaskStateService {
     @Inject('TaskRepository') private taskRepository: TaskRepositoryPort,
     @Inject('WorkflowInstanceRepository')
     private instanceRepository: WorkflowInstanceRepositoryPort,
+    @Inject('TaskLogRepository')
+    private taskLogRepository: TaskLogRepositoryPort,
   ) {}
 
   async markTaskRunning(task: Task): Promise<void> {
     task.status = TaskStatus.RUNNING;
     task.startedAt = new Date();
     await this.taskRepository.saveTask(task);
+    await this.taskLogRepository.createLog(
+      task.id,
+      'INFO',
+      `Task started (attempt ${task.attempt + 1})`,
+    );
   }
 
   async markTaskSucceeded(task: Task): Promise<void> {
     task.status = TaskStatus.SUCCEEDED;
     task.finishedAt = new Date();
     await this.taskRepository.saveTask(task);
+    await this.taskLogRepository.createLog(task.id, 'INFO', 'Task succeeded');
     await this.checkWorkflowCompletion(task.instanceId);
   }
 
@@ -30,6 +39,11 @@ export class TaskStateService {
     task.finishedAt = new Date();
     task.lastError = error.message;
     await this.taskRepository.saveTask(task);
+    await this.taskLogRepository.createLog(
+      task.id,
+      'ERROR',
+      `Task failed: ${error.message}`,
+    );
 
     const instance = await this.instanceRepository.findWorkflowInstanceById(
       task.instanceId,
@@ -47,8 +61,10 @@ export class TaskStateService {
     const delaySeconds = Math.pow(2, task.attempt);
     task.scheduledAt = new Date(Date.now() + delaySeconds * 1000);
     await this.taskRepository.saveTask(task);
-    console.log(
-      `[TaskStateService] Scheduled retry for task ${task.id}, attempt ${task.attempt}/${task.maxAttempts}, delay: ${delaySeconds}s`,
+    await this.taskLogRepository.createLog(
+      task.id,
+      'WARN',
+      `Scheduled retry ${task.attempt}/${task.maxAttempts}, delay: ${delaySeconds}s`,
     );
   }
 
@@ -62,9 +78,6 @@ export class TaskStateService {
       if (instance) {
         instance.status = WorkflowInstanceStatus.SUCCEEDED;
         await this.instanceRepository.saveWorkflowInstance(instance);
-        console.log(
-          `[TaskStateService] Workflow instance ${instanceId} completed successfully`,
-        );
       }
     }
   }

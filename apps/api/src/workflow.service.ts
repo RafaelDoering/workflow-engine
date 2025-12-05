@@ -11,12 +11,17 @@ import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
 import type { QueuePort } from '@app/core/ports/queue.port';
 import type { TaskPayload } from '@app/core';
 
+export interface InstanceWithTasks {
+  instance: WorkflowInstance;
+  tasks: Task[];
+}
+
 @Injectable()
 export class WorkflowService {
   constructor(
     @Inject('WorkflowInstanceRepository')
-    private instanceRepo: WorkflowInstanceRepositoryPort,
-    @Inject('TaskRepository') private taskRepo: TaskRepositoryPort,
+    private instanceRepository: WorkflowInstanceRepositoryPort,
+    @Inject('TaskRepository') private taskRepository: TaskRepositoryPort,
     @Inject('QueuePort') private queue: QueuePort,
   ) {}
 
@@ -33,7 +38,7 @@ export class WorkflowService {
       new Date(),
     );
 
-    await this.instanceRepo.saveWorkflowInstance(instance);
+    await this.instanceRepository.saveWorkflowInstance(instance);
 
     const taskId = uuidv4();
     const task = new Task(
@@ -44,14 +49,14 @@ export class WorkflowService {
       TaskStatus.PENDING,
       0,
       3,
-      uuidv4(), // Idempotency key
-      new Date(), // Scheduled immediately
+      `${instanceId}-fetch-orders`,
+      new Date(),
       null,
       null,
       null,
     );
 
-    await this.taskRepo.saveTask(task);
+    await this.taskRepository.saveTask(task);
     await this.queue.publish('task-queue', {
       taskId: task.id,
       instanceId: task.instanceId,
@@ -64,5 +69,18 @@ export class WorkflowService {
     });
 
     return { instanceId };
+  }
+
+  async getInstances(workflowId: string): Promise<WorkflowInstance[]> {
+    return this.instanceRepository.findByWorkflowId(workflowId);
+  }
+
+  async getInstance(instanceId: string): Promise<InstanceWithTasks | null> {
+    const instance =
+      await this.instanceRepository.findWorkflowInstanceById(instanceId);
+    if (!instance) return null;
+
+    const tasks = await this.taskRepository.findByInstanceId(instanceId);
+    return { instance, tasks };
   }
 }

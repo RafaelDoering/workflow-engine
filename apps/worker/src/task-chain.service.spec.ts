@@ -26,6 +26,7 @@ describe('TaskChainService', () => {
     mockInstanceRepository = {
       findWorkflowInstanceById: jest.fn(),
       saveWorkflowInstance: jest.fn(),
+      findByWorkflowId: jest.fn(),
     };
     mockTaskRepository = {
       saveTask: jest.fn(),

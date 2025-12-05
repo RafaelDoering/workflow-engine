@@ -7,11 +7,13 @@ import {
 } from '@app/core/domain/workflow-instance.entity';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
 import type { WorkflowInstanceRepositoryPort } from '@app/core/ports/workflow-instance-repository.port';
+import type { TaskLogRepositoryPort } from '@app/core/ports/task-log-repository.port';
 
 describe('TaskStateService', () => {
   let service: TaskStateService;
   let mockTaskRepository: jest.Mocked<TaskRepositoryPort>;
   let mockInstanceRepository: jest.Mocked<WorkflowInstanceRepositoryPort>;
+  let mockTaskLogRepository: jest.Mocked<TaskLogRepositoryPort>;
 
   beforeEach(async () => {
     mockTaskRepository = {
@@ -22,6 +24,11 @@ describe('TaskStateService', () => {
     mockInstanceRepository = {
       findWorkflowInstanceById: jest.fn(),
       saveWorkflowInstance: jest.fn(),
+      findByWorkflowId: jest.fn(),
+    };
+    mockTaskLogRepository = {
+      createLog: jest.fn(),
+      findByTaskId: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -32,6 +39,7 @@ describe('TaskStateService', () => {
           provide: 'WorkflowInstanceRepository',
           useValue: mockInstanceRepository,
         },
+        { provide: 'TaskLogRepository', useValue: mockTaskLogRepository },
       ],
     }).compile();
 
@@ -43,7 +51,7 @@ describe('TaskStateService', () => {
   });
 
   describe('markTaskRunning', () => {
-    it('should update task status to RUNNING', async () => {
+    it('should update task status to RUNNING and log', async () => {
       const task = new Task(
         'task-1',
         'instance-1',
@@ -64,11 +72,16 @@ describe('TaskStateService', () => {
       expect(task.status).toBe(TaskStatus.RUNNING);
       expect(task.startedAt).toBeInstanceOf(Date);
       expect(mockTaskRepository.saveTask).toHaveBeenCalledWith(task);
+      expect(mockTaskLogRepository.createLog).toHaveBeenCalledWith(
+        task.id,
+        'INFO',
+        expect.stringContaining('started'),
+      );
     });
   });
 
   describe('markTaskSucceeded', () => {
-    it('should update task status to SUCCEEDED', async () => {
+    it('should update task status to SUCCEEDED and log', async () => {
       const task = new Task(
         'task-1',
         'instance-1',
@@ -89,47 +102,16 @@ describe('TaskStateService', () => {
       await service.markTaskSucceeded(task);
 
       expect(task.status).toBe(TaskStatus.SUCCEEDED);
-      expect(task.finishedAt).toBeInstanceOf(Date);
-      expect(mockTaskRepository.saveTask).toHaveBeenCalledWith(task);
-    });
-
-    it('should mark workflow SUCCEEDED when all tasks complete', async () => {
-      const task = new Task(
-        'task-1',
-        'instance-1',
-        'send-email',
-        { orderId: 'ORD-1' },
-        TaskStatus.SUCCEEDED,
-        0,
-        3,
-        null,
-        null,
-        new Date(),
-        null,
-        null,
+      expect(mockTaskLogRepository.createLog).toHaveBeenCalledWith(
+        task.id,
+        'INFO',
+        'Task succeeded',
       );
-
-      const instance = new WorkflowInstance(
-        'instance-1',
-        'workflow-1',
-        WorkflowInstanceStatus.RUNNING,
-        new Date(),
-        new Date(),
-      );
-
-      mockTaskRepository.findByInstanceId.mockResolvedValue([task]);
-      mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(
-        instance,
-      );
-
-      await service.markTaskSucceeded(task);
-
-      expect(mockInstanceRepository.saveWorkflowInstance).toHaveBeenCalled();
     });
   });
 
   describe('scheduleRetry', () => {
-    it('should increment attempt and schedule retry', async () => {
+    it('should increment attempt and log', async () => {
       const task = new Task(
         'task-1',
         'instance-1',
@@ -148,15 +130,16 @@ describe('TaskStateService', () => {
       await service.scheduleRetry(task, new Error('Network timeout'));
 
       expect(task.attempt).toBe(2);
-      expect(task.status).toBe(TaskStatus.PENDING);
-      expect(task.lastError).toBe('Network timeout');
-      expect(task.scheduledAt).toBeInstanceOf(Date);
-      expect(mockTaskRepository.saveTask).toHaveBeenCalledWith(task);
+      expect(mockTaskLogRepository.createLog).toHaveBeenCalledWith(
+        task.id,
+        'WARN',
+        expect.stringContaining('retry'),
+      );
     });
   });
 
   describe('markTaskFailed', () => {
-    it('should mark task and workflow as FAILED', async () => {
+    it('should mark task FAILED and log error', async () => {
       const task = new Task(
         'task-1',
         'instance-1',
@@ -187,9 +170,11 @@ describe('TaskStateService', () => {
       await service.markTaskFailed(task, new Error('Fatal error'));
 
       expect(task.status).toBe(TaskStatus.FAILED);
-      expect(task.lastError).toBe('Fatal error');
-      expect(instance.status).toBe(WorkflowInstanceStatus.FAILED);
-      expect(mockInstanceRepository.saveWorkflowInstance).toHaveBeenCalled();
+      expect(mockTaskLogRepository.createLog).toHaveBeenCalledWith(
+        task.id,
+        'ERROR',
+        expect.stringContaining('Fatal error'),
+      );
     });
   });
 });

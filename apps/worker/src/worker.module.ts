@@ -8,6 +8,7 @@ import { Pool } from 'pg';
 import { PrismaWorkflowRepository } from '@app/core/adapters/prisma-workflow-repository';
 import { PrismaWorkflowInstanceRepository } from '@app/core/adapters/prisma-workflow-instance-repository';
 import { PrismaTaskRepository } from '@app/core/adapters/prisma-task-repository';
+import { PrismaTaskLogRepository } from '@app/core/adapters/prisma-task-log-repository';
 import { KafkaConsumer } from '@app/core/adapters/kafka.consumer';
 import { KafkaProducer } from '@app/core/adapters/kafka.producer';
 import { WorkerService } from './worker.service';
@@ -49,14 +50,15 @@ import { SendEmailHandler } from './handlers/send-email.handler';
       useClass: PrismaTaskRepository,
     },
     {
+      provide: 'TaskLogRepository',
+      useClass: PrismaTaskLogRepository,
+    },
+    {
       provide: 'QueuePort',
       useClass: KafkaProducer,
     },
     KafkaConsumer,
     KafkaProducer,
-    PrismaWorkflowRepository,
-    PrismaWorkflowInstanceRepository,
-    PrismaTaskRepository,
     FetchOrdersHandler,
     CreateInvoiceHandler,
     PdfProcessHandler,

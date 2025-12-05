@@ -55,4 +55,21 @@ export class PrismaWorkflowInstanceRepository implements WorkflowInstanceReposit
       record.updatedAt,
     );
   }
+
+  async findByWorkflowId(workflowId: string): Promise<WorkflowInstance[]> {
+    const records = await this.prisma.workflowInstance.findMany({
+      where: { workflowId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return records.map(
+      (record) =>
+        new WorkflowInstance(
+          record.id,
+          record.workflowId,
+          this.toDomainStatus(record.status),
+          record.createdAt,
+          record.updatedAt,
+        ),
+    );
+  }
 }
