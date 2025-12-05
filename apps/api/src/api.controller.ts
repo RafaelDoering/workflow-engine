@@ -6,7 +6,7 @@ type StartWorkflowRequest = { payload: TaskPayload };
 
 @Controller('workflows')
 export class ApiController {
-  constructor(private workflowService: WorkflowService) { }
+  constructor(private workflowService: WorkflowService) {}
 
   @Post(':id/start')
   async startWorkflow(
