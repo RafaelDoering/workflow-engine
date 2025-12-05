@@ -37,4 +37,4 @@ import { WorkflowService } from './workflow.service';
     },
   ],
 })
-export class ApiModule { }
+export class ApiModule {}

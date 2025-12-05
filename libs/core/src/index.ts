@@ -1,2 +1,4 @@
 export * from './core.module';
-export * from './core.service';
+export * from './domain/task.entity';
+export * from './domain/workflow.entity';
+export * from './domain/workflow-instance.entity';

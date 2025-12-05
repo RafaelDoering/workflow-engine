@@ -5,29 +5,29 @@ import { QueuePort } from '../ports/queue.port';
 
 @Injectable()
 export class KafkaProducer implements QueuePort, OnModuleInit, OnModuleDestroy {
-    private kafka: Kafka;
-    private producer: Producer;
+  private kafka: Kafka;
+  private producer: Producer;
 
-    constructor() {
-        this.kafka = new Kafka({
-            clientId: 'workflow-api',
-            brokers: ['localhost:19092'],
-        });
-        this.producer = this.kafka.producer();
-    }
+  constructor() {
+    this.kafka = new Kafka({
+      clientId: 'workflow-api',
+      brokers: ['localhost:19092'],
+    });
+    this.producer = this.kafka.producer();
+  }
 
-    async onModuleInit() {
-        await this.producer.connect();
-    }
+  async onModuleInit() {
+    await this.producer.connect();
+  }
 
-    async onModuleDestroy() {
-        await this.producer.disconnect();
-    }
+  async onModuleDestroy() {
+    await this.producer.disconnect();
+  }
 
-    async publish(topic: string, message: any): Promise<void> {
-        await this.producer.send({
-            topic,
-            messages: [{ value: JSON.stringify(message) }],
-        });
-    }
+  async publish(topic: string, message: any): Promise<void> {
+    await this.producer.send({
+      topic,
+      messages: [{ value: JSON.stringify(message) }],
+    });
+  }
 }
