@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { TaskHandler, TaskPayload } from './task-handler.interface';
+import { TaskPayload } from '@app/core/domain/task.entity';
+import { TaskHandler } from './task-handler.interface';
 
 @Injectable()
 export class SendEmailHandler implements TaskHandler {
@@ -7,7 +8,7 @@ export class SendEmailHandler implements TaskHandler {
     console.log('[SendEmailHandler] Sending email for:', payload);
     await this.delay(300);
 
-    const emailResult = {
+    const email = {
       messageId: `msg-${Date.now()}`,
       recipient: `customer-${payload.orderId ?? 'unknown'}@example.com`,
       subject: `Invoice ${payload.invoice?.invoiceId ?? 'N/A'}`,
@@ -15,8 +16,8 @@ export class SendEmailHandler implements TaskHandler {
       status: 'sent',
     };
 
-    console.log('[SendEmailHandler] Email sent:', emailResult);
-    return { email: emailResult };
+    console.log('[SendEmailHandler] Email sent:', email);
+    return { ...payload, email };
   }
 
   private delay(ms: number): Promise<void> {

@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { TaskPayload } from '@app/core/domain/task.entity';
 import { FetchOrdersHandler } from './handlers/fetch-orders.handler';
 import { CreateInvoiceHandler } from './handlers/create-invoice.handler';
 import { PdfProcessHandler } from './handlers/pdf-process.handler';
 import { SendEmailHandler } from './handlers/send-email.handler';
-import { TaskHandler, TaskPayload } from './handlers/task-handler.interface';
+import { TaskHandler } from './handlers/task-handler.interface';
 
 @Injectable()
 export class TaskExecutor {

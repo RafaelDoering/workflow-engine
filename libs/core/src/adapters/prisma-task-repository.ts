@@ -66,4 +66,31 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
       );
     });
   }
+
+  async findRetryableTasks(): Promise<Task[]> {
+    const records = await this.prisma.task.findMany({
+      where: {
+        status: 'PENDING',
+        scheduledAt: { lte: new Date() },
+      },
+    });
+    return records.map((record) => {
+      const payload = TaskPayloadSchema.parse(record.payload);
+
+      return new Task(
+        record.id,
+        record.workflowInstanceId,
+        record.type,
+        payload,
+        this.toDomainStatus(record.status),
+        record.attempt,
+        record.maxAttempts,
+        record.idempotencyKey,
+        record.scheduledAt,
+        record.startedAt,
+        record.finishedAt,
+        record.lastError,
+      );
+    });
+  }
 }

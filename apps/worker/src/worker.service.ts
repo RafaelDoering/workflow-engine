@@ -1,9 +1,10 @@
 import { Injectable, Inject, OnModuleInit } from '@nestjs/common';
 import { KafkaConsumer } from '@app/core/adapters/kafka.consumer';
+import { TaskPayload } from '@app/core/domain/task.entity';
 import { TaskExecutor } from './task-executor.service';
 import { TaskStateService } from './task-state.service';
+import { TaskChainService } from './task-chain.service';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
-import type { TaskPayload } from './handlers/task-handler.interface';
 
 interface TaskMessage {
   taskId: string;
@@ -22,6 +23,7 @@ export class WorkerService implements OnModuleInit {
     private kafkaConsumer: KafkaConsumer,
     private taskExecutor: TaskExecutor,
     private taskState: TaskStateService,
+    private taskChain: TaskChainService,
     @Inject('TaskRepository') private taskRepository: TaskRepositoryPort,
   ) {}
 
@@ -53,9 +55,14 @@ export class WorkerService implements OnModuleInit {
       }
 
       await this.taskState.markTaskRunning(task);
-      await this.taskExecutor.execute(message.type, message.payload);
+      const result = await this.taskExecutor.execute(
+        message.type,
+        message.payload,
+      );
       await this.taskState.markTaskSucceeded(task);
       console.log(`[WorkerService] Task ${message.taskId} succeeded`);
+
+      await this.taskChain.queueNextTask(task, result);
     } catch (error) {
       console.error(`[WorkerService] Task ${message.taskId} failed:`, error);
 

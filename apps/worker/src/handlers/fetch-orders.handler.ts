@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { TaskHandler, TaskPayload } from './task-handler.interface';
+import { TaskPayload } from '@app/core/domain/task.entity';
+import { TaskHandler } from './task-handler.interface';
 
 @Injectable()
 export class FetchOrdersHandler implements TaskHandler {
@@ -23,7 +24,7 @@ export class FetchOrdersHandler implements TaskHandler {
     ];
 
     console.log('[FetchOrdersHandler] Fetched orders:', orders);
-    return { orders };
+    return { ...payload, orders };
   }
 
   private delay(ms: number): Promise<void> {

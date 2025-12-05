@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { TaskHandler, TaskPayload } from './task-handler.interface';
+import { TaskPayload } from '@app/core/domain/task.entity';
+import { TaskHandler } from './task-handler.interface';
 
 @Injectable()
 export class PdfProcessHandler implements TaskHandler {
@@ -14,7 +15,7 @@ export class PdfProcessHandler implements TaskHandler {
     };
 
     console.log('[PdfProcessHandler] Generated PDF:', pdf);
-    return { pdf };
+    return { ...payload, pdf };
   }
 
   private delay(ms: number): Promise<void> {

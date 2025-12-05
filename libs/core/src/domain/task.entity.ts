@@ -1,7 +1,40 @@
 import { z } from 'zod';
 
 export const TaskPayloadSchema = z.object({
-  orderId: z.string(),
+  orderId: z.string().optional(),
+  orders: z
+    .array(
+      z.object({
+        id: z.number(),
+        amount: z.number(),
+        items: z.number(),
+      }),
+    )
+    .optional(),
+  invoice: z
+    .object({
+      invoiceId: z.string(),
+      customerId: z.string(),
+      total: z.number(),
+      createdAt: z.string(),
+    })
+    .optional(),
+  pdf: z
+    .object({
+      pdfUrl: z.string(),
+      size: z.number(),
+      generatedAt: z.string(),
+    })
+    .optional(),
+  email: z
+    .object({
+      messageId: z.string(),
+      recipient: z.string(),
+      subject: z.string(),
+      sentAt: z.string(),
+      status: z.string(),
+    })
+    .optional(),
 });
 
 export type TaskPayload = z.infer<typeof TaskPayloadSchema>;

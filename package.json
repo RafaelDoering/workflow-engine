@@ -11,19 +11,19 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/apps/workflow-manager/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./apps/workflow-manager/test/jest-e2e.json"
+    "seed": "npx ts-node -r tsconfig-paths/register seed.ts",
+    "test:workflow": "npx ts-node -r tsconfig-paths/register scripts/test-workflow.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/schedule": "^6.0.1",
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.0.1",
     "@types/uuid": "^10.0.0",
