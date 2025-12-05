@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Kafka, Consumer, EachMessagePayload } from 'kafkajs';
 import { Task } from '@app/core/domain/task.entity';
 
-export type MessageHandler = (payload: Task) => Promise<void>;
+type MessageHandler = (payload: Task) => Promise<void>;
 
 @Injectable()
 export class KafkaConsumer implements OnModuleInit, OnModuleDestroy {

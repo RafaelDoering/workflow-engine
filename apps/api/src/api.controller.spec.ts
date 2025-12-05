@@ -4,13 +4,11 @@ import { WorkflowService } from './workflow.service';
 
 describe('ApiController', () => {
   let controller: ApiController;
-  let workflowService: WorkflowService;
-  let mockWorkflowServiceStartWorkflow: jest.Mock;
+  let workflowService: Partial<WorkflowService>;
 
   beforeEach(async () => {
-    mockWorkflowServiceStartWorkflow = jest.fn();
-    const mockWorkflowService = {
-      startWorkflow: mockWorkflowServiceStartWorkflow,
+    workflowService = {
+      startWorkflow: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -18,13 +16,12 @@ describe('ApiController', () => {
       providers: [
         {
           provide: WorkflowService,
-          useValue: mockWorkflowService,
+          useValue: workflowService,
         },
       ],
     }).compile();
 
     controller = module.get<ApiController>(ApiController);
-    workflowService = module.get<WorkflowService>(WorkflowService);
   });
 
   it('should be defined', () => {
@@ -37,13 +34,13 @@ describe('ApiController', () => {
       const payload = { orderId: '123' };
       const expectedResult = { instanceId: 'instance-id' };
 
-      jest
-        .spyOn(workflowService, 'startWorkflow')
-        .mockResolvedValue(expectedResult);
+      (workflowService.startWorkflow as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
 
       const result = await controller.startWorkflow(workflowId, { payload });
 
-      expect(mockWorkflowServiceStartWorkflow).toHaveBeenCalledWith(
+      expect(workflowService.startWorkflow).toHaveBeenCalledWith(
         workflowId,
         payload,
       );

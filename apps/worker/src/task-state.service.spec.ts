@@ -28,7 +28,6 @@ describe('TaskStateService', () => {
     };
     mockTaskLogRepository = {
       createLog: jest.fn(),
-      findByTaskId: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({

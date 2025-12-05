@@ -159,5 +159,57 @@ describe('TaskChainService', () => {
 
       expect(nextTask).toBeNull();
     });
+
+    it('should return null when workflow not found', async () => {
+      const completedTask = new Task(
+        'task-1',
+        'instance-1',
+        'fetch-orders',
+        { orderId: 'ORD-123' },
+        TaskStatus.SUCCEEDED,
+        0,
+        3,
+        null,
+        null,
+        null,
+        null,
+        null,
+      );
+
+      mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(
+        mockInstance,
+      );
+      mockWorkflowRepository.findWorkflowById.mockResolvedValue(null);
+
+      const nextTask = await service.queueNextTask(completedTask, {});
+
+      expect(nextTask).toBeNull();
+    });
+
+    it('should return null when task type not in workflow steps', async () => {
+      const completedTask = new Task(
+        'task-1',
+        'instance-1',
+        'unknown-task-type',
+        { orderId: 'ORD-123' },
+        TaskStatus.SUCCEEDED,
+        0,
+        3,
+        null,
+        null,
+        null,
+        null,
+        null,
+      );
+
+      mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(
+        mockInstance,
+      );
+      mockWorkflowRepository.findWorkflowById.mockResolvedValue(mockWorkflow);
+
+      const nextTask = await service.queueNextTask(completedTask, {});
+
+      expect(nextTask).toBeNull();
+    });
   });
 });

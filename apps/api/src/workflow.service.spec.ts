@@ -11,32 +11,26 @@ import type { QueuePort } from '@app/core/ports/queue.port';
 
 describe('WorkflowService', () => {
   let service: WorkflowService;
-  let mockInstanceRepository: WorkflowInstanceRepositoryPort;
-  let mockInstanceRepositorySaveWorkflowInstance: jest.Mock;
-  let mockTaskRepository: TaskRepositoryPort;
-  let mockTaskRepositorySaveTask: jest.Mock;
-  let mockQueue: QueuePort;
-  let mockQueuePublish: jest.Mock;
+  let mockInstanceRepository: jest.Mocked<WorkflowInstanceRepositoryPort>;
+  let mockTaskRepository: jest.Mocked<TaskRepositoryPort>;
+  let mockQueue: jest.Mocked<QueuePort>;
   const payload = { orderId: '123' };
 
   beforeEach(async () => {
-    mockInstanceRepositorySaveWorkflowInstance = jest.fn();
     mockInstanceRepository = {
-      saveWorkflowInstance: mockInstanceRepositorySaveWorkflowInstance,
+      saveWorkflowInstance: jest.fn(),
       findWorkflowInstanceById: jest.fn(),
       findByWorkflowId: jest.fn(),
     };
 
-    mockTaskRepositorySaveTask = jest.fn();
     mockTaskRepository = {
-      saveTask: mockTaskRepositorySaveTask,
+      saveTask: jest.fn(),
       findByInstanceId: jest.fn(),
       findRetryableTasks: jest.fn(),
     };
 
-    mockQueuePublish = jest.fn();
     mockQueue = {
-      publish: mockQueuePublish,
+      publish: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -72,9 +66,9 @@ describe('WorkflowService', () => {
       const result = await service.startWorkflow(workflowId, payload);
 
       expect(result).toHaveProperty('instanceId');
-      expect(mockInstanceRepositorySaveWorkflowInstance).toHaveBeenCalled();
-      expect(mockTaskRepositorySaveTask).toHaveBeenCalled();
-      expect(mockQueuePublish).toHaveBeenCalledWith(
+      expect(mockInstanceRepository.saveWorkflowInstance).toHaveBeenCalled();
+      expect(mockTaskRepository.saveTask).toHaveBeenCalled();
+      expect(mockQueue.publish).toHaveBeenCalledWith(
         'task-queue',
         expect.objectContaining({
           instanceId: result.instanceId,
@@ -87,19 +81,15 @@ describe('WorkflowService', () => {
     it('should create workflow instance with RUNNING status', async () => {
       await service.startWorkflow('workflow-123', payload);
 
-      const savedInstance = (
-        mockInstanceRepositorySaveWorkflowInstance.mock
-          .calls as WorkflowInstance[][]
-      )[0][0];
+      const savedInstance =
+        mockInstanceRepository.saveWorkflowInstance.mock.calls[0][0];
       expect(savedInstance.status).toBe(WorkflowInstanceStatus.RUNNING);
     });
 
     it('should create task with PENDING status', async () => {
       await service.startWorkflow('workflow-123', payload);
 
-      const savedTask = (
-        mockTaskRepositorySaveTask.mock.calls as Task[][]
-      )[0][0];
+      const savedTask = mockTaskRepository.saveTask.mock.calls[0][0];
       expect(savedTask.status).toBe(TaskStatus.PENDING);
       expect(savedTask.attempt).toBe(0);
       expect(savedTask.maxAttempts).toBe(3);
@@ -116,21 +106,19 @@ describe('WorkflowService', () => {
         new Date(),
       );
 
-      (
-        mockInstanceRepository.findWorkflowInstanceById as jest.Mock
-      ).mockResolvedValue(instance);
+      mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(
+        instance,
+      );
 
       const result = await service.cancelInstance('instance-1');
 
       expect(result).toEqual({ success: true });
       expect(instance.status).toBe(WorkflowInstanceStatus.CANCELLED);
-      expect(mockInstanceRepositorySaveWorkflowInstance).toHaveBeenCalled();
+      expect(mockInstanceRepository.saveWorkflowInstance).toHaveBeenCalled();
     });
 
     it('should return success: false if instance not found', async () => {
-      (
-        mockInstanceRepository.findWorkflowInstanceById as jest.Mock
-      ).mockResolvedValue(null);
+      mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(null);
 
       const result = await service.cancelInstance('missing-instance');
 
@@ -146,13 +134,88 @@ describe('WorkflowService', () => {
         new Date(),
       );
 
-      (
-        mockInstanceRepository.findWorkflowInstanceById as jest.Mock
-      ).mockResolvedValue(instance);
+      mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(
+        instance,
+      );
 
       const result = await service.cancelInstance('instance-1');
 
       expect(result).toEqual({ success: false });
+    });
+  });
+
+  describe('getInstances', () => {
+    it('should return all instances for a workflow', async () => {
+      const instances = [
+        new WorkflowInstance(
+          'instance-1',
+          'workflow-1',
+          WorkflowInstanceStatus.RUNNING,
+          new Date(),
+          new Date(),
+        ),
+        new WorkflowInstance(
+          'instance-2',
+          'workflow-1',
+          WorkflowInstanceStatus.SUCCEEDED,
+          new Date(),
+          new Date(),
+        ),
+      ];
+
+      mockInstanceRepository.findByWorkflowId.mockResolvedValue(instances);
+
+      const result = await service.getInstances('workflow-1');
+
+      expect(result).toEqual(instances);
+      expect(mockInstanceRepository.findByWorkflowId).toHaveBeenCalledWith(
+        'workflow-1',
+      );
+    });
+  });
+
+  describe('getInstance', () => {
+    it('should return instance with tasks', async () => {
+      const instance = new WorkflowInstance(
+        'instance-1',
+        'workflow-1',
+        WorkflowInstanceStatus.RUNNING,
+        new Date(),
+        new Date(),
+      );
+      const tasks = [
+        new Task(
+          'task-1',
+          'instance-1',
+          'fetch-orders',
+          { orderId: 'ORD-1' },
+          TaskStatus.SUCCEEDED,
+          0,
+          3,
+          null,
+          null,
+          null,
+          null,
+          null,
+        ),
+      ];
+
+      mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(
+        instance,
+      );
+      mockTaskRepository.findByInstanceId.mockResolvedValue(tasks);
+
+      const result = await service.getInstance('instance-1');
+
+      expect(result).toEqual({ instance, tasks });
+    });
+
+    it('should return null if instance not found', async () => {
+      mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(null);
+
+      const result = await service.getInstance('missing-instance');
+
+      expect(result).toBeNull();
     });
   });
 });
