@@ -31,7 +31,6 @@ export class TaskStateService {
     task.finishedAt = new Date();
     await this.taskRepository.saveTask(task);
     await this.taskLogRepository.createLog(task.id, 'INFO', 'Task succeeded');
-    await this.checkWorkflowCompletion(task.instanceId);
   }
 
   async markTaskFailed(task: Task, error: Error): Promise<void> {
@@ -68,7 +67,7 @@ export class TaskStateService {
     );
   }
 
-  private async checkWorkflowCompletion(instanceId: string): Promise<void> {
+  async checkWorkflowCompletion(instanceId: string): Promise<void> {
     const tasks = await this.taskRepository.findByInstanceId(instanceId);
     const allSucceeded = tasks.every((t) => t.status === TaskStatus.SUCCEEDED);
 

@@ -35,6 +35,7 @@ describe('WorkerService', () => {
       markTaskFailed: jest.fn(),
       scheduleRetry: jest.fn(),
       markTaskDeadLetter: jest.fn(),
+      checkWorkflowCompletion: jest.fn(),
     } as unknown as jest.Mocked<TaskStateService>;
 
     mockTaskChain = {
@@ -122,6 +123,9 @@ describe('WorkerService', () => {
       );
       expect(mockTaskState.markTaskSucceeded).toHaveBeenCalledWith(task);
       expect(mockTaskChain.queueNextTask).toHaveBeenCalledWith(task, result);
+      expect(mockTaskState.checkWorkflowCompletion).toHaveBeenCalledWith(
+        task.instanceId,
+      );
     });
 
     it('should skip if task not found', async () => {

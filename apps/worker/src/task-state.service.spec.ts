@@ -219,4 +219,80 @@ describe('TaskStateService', () => {
       expect(mockInstanceRepository.saveWorkflowInstance).toHaveBeenCalled();
     });
   });
+  describe('checkWorkflowCompletion', () => {
+    it('should mark workflow SUCCEEDED if all tasks succeeded', async () => {
+      const task1 = new Task(
+        'task-1',
+        'instance-1',
+        'fetch-orders',
+        { orderId: 'ORD-1' },
+        TaskStatus.SUCCEEDED,
+        0,
+        3,
+        '123',
+        new Date(),
+        new Date(),
+        null,
+        null,
+      );
+      const instance = new WorkflowInstance(
+        'instance-1',
+        'workflow-1',
+        WorkflowInstanceStatus.RUNNING,
+        new Date(),
+        new Date(),
+      );
+
+      mockTaskRepository.findByInstanceId.mockResolvedValue([task1]);
+      mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(
+        instance,
+      );
+
+      await service.checkWorkflowCompletion('instance-1');
+
+      expect(instance.status).toBe(WorkflowInstanceStatus.SUCCEEDED);
+      expect(mockInstanceRepository.saveWorkflowInstance).toHaveBeenCalledWith(
+        instance,
+      );
+    });
+
+    it('should NOT mark workflow SUCCEEDED if any task is not succeeded', async () => {
+      const task1 = new Task(
+        'task-1',
+        'instance-1',
+        'fetch-orders',
+        { orderId: 'ORD-1' },
+        TaskStatus.SUCCEEDED,
+        0,
+        3,
+        '123',
+        new Date(),
+        new Date(),
+        null,
+        null,
+      );
+      const task2 = new Task(
+        'task-2',
+        'instance-1',
+        'create-invoice',
+        { orderId: 'ORD-1' },
+        TaskStatus.PENDING,
+        0,
+        3,
+        '124',
+        new Date(),
+        null,
+        null,
+        null,
+      );
+
+      mockTaskRepository.findByInstanceId.mockResolvedValue([task1, task2]);
+
+      await service.checkWorkflowCompletion('instance-1');
+
+      expect(
+        mockInstanceRepository.saveWorkflowInstance,
+      ).not.toHaveBeenCalled();
+    });
+  });
 });

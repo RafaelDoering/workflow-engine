@@ -60,6 +60,7 @@ export class WorkerService implements OnModuleInit {
       console.log(`[WorkerService] Task ${message.id} succeeded`);
 
       await this.taskChain.queueNextTask(task, result);
+      await this.taskState.checkWorkflowCompletion(task.instanceId);
     } catch (error) {
       console.error(`[WorkerService] Task ${message.id} failed:`, error);
 

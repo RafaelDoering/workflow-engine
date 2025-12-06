@@ -5,7 +5,7 @@ import { StartWorkflowDto } from './dtos/start-workflow.dto';
 
 @Controller('workflows')
 export class ApiController {
-  constructor(private workflowService: WorkflowService) { }
+  constructor(private workflowService: WorkflowService) {}
 
   @Post(':id/start')
   async startWorkflow(
