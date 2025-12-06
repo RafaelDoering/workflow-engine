@@ -77,6 +77,53 @@ services:
     depends_on:
       - redpanda
 
+  migrator:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: development
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/workflow-manager
+    command: npx prisma migrate deploy
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/workflow-manager
+      BROKER_URLS: redpanda-0:9092
+      PORT: 3000
+      LOG_LEVEL: info
+    ports:
+      - 3000:3000
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/workflow-manager
+      BROKER_URLS: redpanda-0:9092
+      LOG_LEVEL: info
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   redpanda_data:
