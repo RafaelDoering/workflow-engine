@@ -15,7 +15,10 @@ describe('RetryScheduler', () => {
       findByInstanceId: jest.fn(),
       findRetryableTasks: jest.fn(),
     };
-    mockTaskQueue = { publish: jest.fn() };
+    mockTaskQueue = {
+      publish: jest.fn(),
+      consume: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

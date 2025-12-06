@@ -6,7 +6,7 @@ import { Pool } from 'pg';
 
 import { PrismaWorkflowInstanceRepository } from '@app/core/adapters/prisma-workflow-instance-repository';
 import { PrismaTaskRepository } from '@app/core/adapters/prisma-task-repository';
-import { KafkaProducer } from '@app/core/adapters/kafka-task-queue.producer';
+import { KafkaTaskQueueAdapter } from '@app/core/adapters/kafka-task-queue.adapter';
 import { ApiController } from './api.controller';
 import { WorkflowService } from './workflow.service';
 
@@ -33,7 +33,7 @@ import { WorkflowService } from './workflow.service';
     },
     {
       provide: 'TaskQueuePort',
-      useClass: KafkaProducer,
+      useClass: KafkaTaskQueueAdapter,
     },
   ],
 })

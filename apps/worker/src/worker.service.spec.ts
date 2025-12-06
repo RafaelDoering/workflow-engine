@@ -1,32 +1,29 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WorkerService } from './worker.service';
-import { KafkaConsumer } from '@app/core/adapters/kafka.consumer';
 import { TaskExecutor } from './task-executor.service';
 import { TaskStateService } from './task-state.service';
 import { TaskChainService } from './task-chain.service';
 import { Task, TaskStatus } from '@app/core/domain/task.entity';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
+import type { TaskQueuePort } from '@app/core/ports/task-queue.port';
 
 describe('WorkerService', () => {
   let service: WorkerService;
-  let mockKafkaConsumer: jest.Mocked<KafkaConsumer>;
+  let mockTaskQueue: jest.Mocked<TaskQueuePort>;
   let mockTaskExecutor: jest.Mocked<TaskExecutor>;
   let mockTaskState: jest.Mocked<TaskStateService>;
   let mockTaskChain: jest.Mocked<TaskChainService>;
   let mockTaskRepository: jest.Mocked<TaskRepositoryPort>;
-  let capturedMessageHandler: (payload: unknown) => Promise<void>;
+  let capturedMessageHandler: (payload: Task) => Promise<void>;
 
   beforeEach(async () => {
-    mockKafkaConsumer = {
-      setMessageHandler: jest.fn(
-        (handler: (payload: unknown) => Promise<void>) => {
-          capturedMessageHandler = handler;
-        },
-      ),
-      start: jest.fn(),
-      onModuleInit: jest.fn(),
-      onModuleDestroy: jest.fn(),
-    } as unknown as jest.Mocked<KafkaConsumer>;
+    mockTaskQueue = {
+      consume: jest.fn((handler: (payload: Task) => Promise<void>) => {
+        capturedMessageHandler = handler;
+        return Promise.resolve();
+      }),
+      publish: jest.fn(),
+    } as unknown as jest.Mocked<TaskQueuePort>;
 
     mockTaskExecutor = {
       execute: jest.fn(),
@@ -53,7 +50,7 @@ describe('WorkerService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WorkerService,
-        { provide: KafkaConsumer, useValue: mockKafkaConsumer },
+        { provide: 'TaskQueuePort', useValue: mockTaskQueue },
         { provide: TaskExecutor, useValue: mockTaskExecutor },
         { provide: TaskStateService, useValue: mockTaskState },
         { provide: TaskChainService, useValue: mockTaskChain },
@@ -69,25 +66,28 @@ describe('WorkerService', () => {
   });
 
   describe('onModuleInit', () => {
-    it('should set message handler and start consumer', async () => {
+    it('should set consume handler', async () => {
       await service.onModuleInit();
 
-      expect(mockKafkaConsumer.setMessageHandler).toHaveBeenCalled();
-      expect(mockKafkaConsumer.start).toHaveBeenCalled();
+      expect(mockTaskQueue.consume).toHaveBeenCalled();
     });
   });
 
   describe('processTask', () => {
-    const taskMessage = {
-      taskId: 'task-1',
-      instanceId: 'instance-1',
-      type: 'fetch-orders',
-      payload: { orderId: 'ORD-1' },
-      attempt: 0,
-      maxAttempts: 3,
-      idempotencyKey: 'key-1',
-      scheduledAt: Date.now(),
-    };
+    const taskMessage = new Task(
+      'task-1',
+      'instance-1',
+      'fetch-orders',
+      { orderId: 'ORD-1' },
+      TaskStatus.PENDING,
+      0,
+      3,
+      'key-1',
+      new Date(),
+      null,
+      null,
+      null,
+    );
 
     beforeEach(async () => {
       await service.onModuleInit();

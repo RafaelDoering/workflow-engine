@@ -1,38 +1,49 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { Kafka, Consumer, EachMessagePayload } from 'kafkajs';
-import { Task } from '@app/core/domain/task.entity';
+import { Kafka, Producer, Consumer, EachMessagePayload } from 'kafkajs';
 
-type MessageHandler = (payload: Task) => Promise<void>;
+import { TaskQueuePort, TaskHandler } from '../ports/task-queue.port';
+import { Task } from '../domain/task.entity';
 
 @Injectable()
-export class KafkaConsumer implements OnModuleInit, OnModuleDestroy {
+export class KafkaTaskQueueAdapter
+  implements TaskQueuePort, OnModuleInit, OnModuleDestroy
+{
   private kafka: Kafka;
+  private producer: Producer;
   private consumer: Consumer;
-  private messageHandler: MessageHandler | null = null;
+  private topic: string = 'task-queue';
+  private messageHandler: TaskHandler | null = null;
 
   constructor() {
     this.kafka = new Kafka({
-      clientId: 'workflow-worker',
+      clientId: 'workflow-service',
       brokers: ['localhost:19092'],
     });
+    this.producer = this.kafka.producer();
     this.consumer = this.kafka.consumer({ groupId: 'workflow-workers' });
   }
 
   async onModuleInit() {
+    await this.producer.connect();
     await this.consumer.connect();
   }
 
   async onModuleDestroy() {
+    await this.producer.disconnect();
     await this.consumer.disconnect();
   }
 
-  setMessageHandler(handler: MessageHandler) {
-    this.messageHandler = handler;
+  async publish(message: Task): Promise<void> {
+    await this.producer.send({
+      topic: this.topic,
+      messages: [{ value: JSON.stringify(message) }],
+    });
   }
 
-  async start() {
+  async consume(handler: TaskHandler): Promise<void> {
+    this.messageHandler = handler;
     await this.consumer.subscribe({
-      topic: 'task-queue',
+      topic: this.topic,
       fromBeginning: false,
     });
     await this.consumer.run({

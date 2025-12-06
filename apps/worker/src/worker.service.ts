@@ -1,5 +1,5 @@
 import { Injectable, Inject, OnModuleInit } from '@nestjs/common';
-import { KafkaConsumer } from '@app/core/adapters/kafka.consumer';
+import type { TaskQueuePort } from '@app/core/ports/task-queue.port';
 import { Task, TaskStatus } from '@app/core/domain/task.entity';
 import { TaskExecutor } from './task-executor.service';
 import { TaskStateService } from './task-state.service';
@@ -9,23 +9,19 @@ import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
 @Injectable()
 export class WorkerService implements OnModuleInit {
   constructor(
-    private kafkaConsumer: KafkaConsumer,
+    @Inject('TaskQueuePort') private taskQueue: TaskQueuePort,
     private taskExecutor: TaskExecutor,
     private taskState: TaskStateService,
     private taskChain: TaskChainService,
     @Inject('TaskRepository') private taskRepository: TaskRepositoryPort,
-  ) { }
+  ) {}
 
   async onModuleInit() {
-    this.kafkaConsumer.setMessageHandler(
-      this.processTask.bind(this) as (payload: unknown) => Promise<void>,
-    );
-    await this.kafkaConsumer.start();
+    await this.taskQueue.consume((msg) => this.processTask(msg));
     console.log('[WorkerService] Started consuming from task-queue');
   }
 
-  private async processTask(payload: unknown): Promise<void> {
-    const message = payload as Task;
+  private async processTask(message: Task): Promise<void> {
     console.log(
       `[WorkerService] Processing task ${message.id} (${message.type})`,
     );

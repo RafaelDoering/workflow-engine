@@ -9,8 +9,7 @@ import { PrismaWorkflowRepository } from '@app/core/adapters/prisma-workflow-rep
 import { PrismaWorkflowInstanceRepository } from '@app/core/adapters/prisma-workflow-instance-repository';
 import { PrismaTaskRepository } from '@app/core/adapters/prisma-task-repository';
 import { PrismaTaskLogRepository } from '@app/core/adapters/prisma-task-log-repository';
-import { KafkaConsumer } from '@app/core/adapters/kafka.consumer';
-import { KafkaProducer } from '@app/core/adapters/kafka-task-queue.producer';
+import { KafkaTaskQueueAdapter } from '@app/core/adapters/kafka-task-queue.adapter';
 import { WorkerService } from './worker.service';
 import { TaskExecutor } from './task-executor.service';
 import { TaskStateService } from './task-state.service';
@@ -55,10 +54,8 @@ import { SendEmailHandler } from './handlers/send-email.handler';
     },
     {
       provide: 'TaskQueuePort',
-      useClass: KafkaProducer,
+      useClass: KafkaTaskQueueAdapter,
     },
-    KafkaConsumer,
-    KafkaProducer,
     FetchOrdersHandler,
     CreateInvoiceHandler,
     PdfProcessHandler,

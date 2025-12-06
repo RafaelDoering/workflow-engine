@@ -31,6 +31,7 @@ describe('WorkflowService', () => {
 
     mockTaskQueue = {
       publish: jest.fn(),
+      consume: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
