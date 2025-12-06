@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient, TaskStatus as PrismaTaskStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  TaskStatus as PrismaTaskStatus,
+} from '@app/prisma/client';
 import { Task, TaskPayloadSchema, TaskStatus } from '../domain/task.entity';
 import { TaskRepositoryPort } from '../ports/task-repository.port';
 

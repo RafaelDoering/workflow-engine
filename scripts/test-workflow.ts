@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@app/prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 

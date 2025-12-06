@@ -4,7 +4,7 @@ import { Task, TaskStatus, TaskPayload } from '@app/core/domain/task.entity';
 import type { WorkflowRepositoryPort } from '@app/core/ports/workflow-repository.port';
 import type { WorkflowInstanceRepositoryPort } from '@app/core/ports/workflow-instance-repository.port';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
-import type { QueuePort } from '@app/core/ports/queue.port';
+import type { TaskQueuePort } from '@app/core/ports/task-queue.port';
 
 @Injectable()
 export class TaskChainService {
@@ -15,8 +15,8 @@ export class TaskChainService {
     private workflowInstanceRepository: WorkflowInstanceRepositoryPort,
     @Inject('TaskRepository')
     private taskRepository: TaskRepositoryPort,
-    @Inject('QueuePort')
-    private queue: QueuePort,
+    @Inject('TaskQueuePort')
+    private taskQueue: TaskQueuePort,
   ) {}
 
   async queueNextTask(
@@ -82,16 +82,7 @@ export class TaskChainService {
 
     await this.taskRepository.saveTask(nextTask);
 
-    await this.queue.publish('task-queue', {
-      taskId: nextTask.id,
-      instanceId: nextTask.instanceId,
-      type: nextTask.type,
-      payload: nextTask.payload,
-      attempt: nextTask.attempt,
-      maxAttempts: nextTask.maxAttempts,
-      idempotencyKey: nextTask.idempotencyKey,
-      scheduledAt: nextTask.scheduledAt?.getTime() ?? Date.now(),
-    });
+    await this.taskQueue.publish(nextTask);
 
     console.log(`[TaskChainService] Queued next task: ${nextTask.id}`);
     return nextTask;

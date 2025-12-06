@@ -9,14 +9,14 @@ import { Workflow } from '@app/core/domain/workflow.entity';
 import type { WorkflowRepositoryPort } from '@app/core/ports/workflow-repository.port';
 import type { WorkflowInstanceRepositoryPort } from '@app/core/ports/workflow-instance-repository.port';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
-import type { QueuePort } from '@app/core/ports/queue.port';
+import type { TaskQueuePort } from '@app/core/ports/task-queue.port';
 
 describe('TaskChainService', () => {
   let service: TaskChainService;
   let mockWorkflowRepository: jest.Mocked<WorkflowRepositoryPort>;
   let mockInstanceRepository: jest.Mocked<WorkflowInstanceRepositoryPort>;
   let mockTaskRepository: jest.Mocked<TaskRepositoryPort>;
-  let mockQueue: jest.Mocked<QueuePort>;
+  let mockTaskQueue: jest.Mocked<TaskQueuePort>;
 
   beforeEach(async () => {
     mockWorkflowRepository = {
@@ -33,7 +33,7 @@ describe('TaskChainService', () => {
       findByInstanceId: jest.fn(),
       findRetryableTasks: jest.fn(),
     };
-    mockQueue = { publish: jest.fn() };
+    mockTaskQueue = { publish: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -44,7 +44,7 @@ describe('TaskChainService', () => {
           useValue: mockInstanceRepository,
         },
         { provide: 'TaskRepository', useValue: mockTaskRepository },
-        { provide: 'QueuePort', useValue: mockQueue },
+        { provide: 'TaskQueuePort', useValue: mockTaskQueue },
       ],
     }).compile();
 
@@ -83,8 +83,8 @@ describe('TaskChainService', () => {
         TaskStatus.SUCCEEDED,
         0,
         3,
-        null,
-        null,
+        '123',
+        new Date(),
         null,
         null,
         null,
@@ -102,8 +102,7 @@ describe('TaskChainService', () => {
       expect(nextTask).not.toBeNull();
       expect(nextTask?.type).toBe('create-invoice');
       expect(mockTaskRepository.saveTask).toHaveBeenCalled();
-      expect(mockQueue.publish).toHaveBeenCalledWith(
-        'task-queue',
+      expect(mockTaskQueue.publish).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'create-invoice',
         }),
@@ -119,8 +118,8 @@ describe('TaskChainService', () => {
         TaskStatus.SUCCEEDED,
         0,
         3,
-        null,
-        null,
+        '123',
+        new Date(),
         null,
         null,
         null,
@@ -146,8 +145,8 @@ describe('TaskChainService', () => {
         TaskStatus.SUCCEEDED,
         0,
         3,
-        null,
-        null,
+        '123',
+        new Date(),
         null,
         null,
         null,
@@ -169,8 +168,8 @@ describe('TaskChainService', () => {
         TaskStatus.SUCCEEDED,
         0,
         3,
-        null,
-        null,
+        '123',
+        new Date(),
         null,
         null,
         null,
@@ -195,8 +194,8 @@ describe('TaskChainService', () => {
         TaskStatus.SUCCEEDED,
         0,
         3,
-        null,
-        null,
+        '123',
+        new Date(),
         null,
         null,
         null,

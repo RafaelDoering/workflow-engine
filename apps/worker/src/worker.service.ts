@@ -1,21 +1,10 @@
 import { Injectable, Inject, OnModuleInit } from '@nestjs/common';
 import { KafkaConsumer } from '@app/core/adapters/kafka.consumer';
-import { TaskPayload, TaskStatus } from '@app/core/domain/task.entity';
+import { Task, TaskStatus } from '@app/core/domain/task.entity';
 import { TaskExecutor } from './task-executor.service';
 import { TaskStateService } from './task-state.service';
 import { TaskChainService } from './task-chain.service';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
-
-interface TaskMessage {
-  taskId: string;
-  instanceId: string;
-  type: string;
-  payload: TaskPayload;
-  attempt: number;
-  maxAttempts: number;
-  idempotencyKey: string;
-  scheduledAt: number;
-}
 
 @Injectable()
 export class WorkerService implements OnModuleInit {
@@ -25,7 +14,7 @@ export class WorkerService implements OnModuleInit {
     private taskState: TaskStateService,
     private taskChain: TaskChainService,
     @Inject('TaskRepository') private taskRepository: TaskRepositoryPort,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     this.kafkaConsumer.setMessageHandler(
@@ -36,20 +25,20 @@ export class WorkerService implements OnModuleInit {
   }
 
   private async processTask(payload: unknown): Promise<void> {
-    const message = payload as TaskMessage;
+    const message = payload as Task;
     console.log(
-      `[WorkerService] Processing task ${message.taskId} (${message.type})`,
+      `[WorkerService] Processing task ${message.id} (${message.type})`,
     );
 
     try {
       const tasks = await this.taskRepository.findByInstanceId(
         message.instanceId,
       );
-      const task = tasks.find((t) => t.id === message.taskId);
+      const task = tasks.find((t) => t.id === message.id);
 
       if (!task) {
         console.error(
-          `[WorkerService] Task ${message.taskId} not found in database`,
+          `[WorkerService] Task ${message.id} not found in database`,
         );
         return;
       }
@@ -61,7 +50,7 @@ export class WorkerService implements OnModuleInit {
         task.status === TaskStatus.DEAD_LETTER
       ) {
         console.log(
-          `[WorkerService] Skipping task ${message.taskId} - already ${task.status}`,
+          `[WorkerService] Skipping task ${message.id} - already ${task.status}`,
         );
         return;
       }
@@ -72,16 +61,16 @@ export class WorkerService implements OnModuleInit {
         message.payload,
       );
       await this.taskState.markTaskSucceeded(task);
-      console.log(`[WorkerService] Task ${message.taskId} succeeded`);
+      console.log(`[WorkerService] Task ${message.id} succeeded`);
 
       await this.taskChain.queueNextTask(task, result);
     } catch (error) {
-      console.error(`[WorkerService] Task ${message.taskId} failed:`, error);
+      console.error(`[WorkerService] Task ${message.id} failed:`, error);
 
       const tasks = await this.taskRepository.findByInstanceId(
         message.instanceId,
       );
-      const task = tasks.find((t) => t.id === message.taskId);
+      const task = tasks.find((t) => t.id === message.id);
       if (!task) return;
 
       if (task.attempt < task.maxAttempts - 1) {
@@ -89,7 +78,7 @@ export class WorkerService implements OnModuleInit {
       } else {
         await this.taskState.markTaskDeadLetter(task, error as Error);
         console.log(
-          `[WorkerService] Task ${message.taskId} moved to dead letter after ${task.attempt + 1} attempts`,
+          `[WorkerService] Task ${message.id} moved to dead letter after ${task.attempt + 1} attempts`,
         );
       }
     }

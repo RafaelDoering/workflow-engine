@@ -5,9 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider        = "prisma-client"
-  output          = "../src/generated/prisma"
-  moduleFormat    = "cjs"
+  provider        = "prisma-client-js"
+  output          = "../generated/prisma"
 }
 
 datasource db {
@@ -49,8 +48,8 @@ model Task {
   status             TaskStatus
   attempt            Int                @default(0)
   maxAttempts        Int                @default(3)
-  idempotencyKey     String?
-  scheduledAt        DateTime?
+  idempotencyKey     String
+  scheduledAt        DateTime
   startedAt          DateTime?
   finishedAt         DateTime?
   lastError          String?

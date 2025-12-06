@@ -27,6 +27,9 @@
       ],
       "@app/core/*": [
         "libs/core/src/*"
+      ],
+      "@app/prisma/client": [
+        "generated/prisma"
       ]
     }
   }

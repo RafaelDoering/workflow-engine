@@ -1,13 +1,13 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
-import type { QueuePort } from '@app/core/ports/queue.port';
+import type { TaskQueuePort } from '@app/core/ports/task-queue.port';
 
 @Injectable()
 export class RetryScheduler {
   constructor(
     @Inject('TaskRepository') private taskRepository: TaskRepositoryPort,
-    @Inject('QueuePort') private queue: QueuePort,
+    @Inject('TaskQueuePort') private taskQueue: TaskQueuePort,
   ) {}
 
   @Cron(CronExpression.EVERY_5_SECONDS)
@@ -19,18 +19,8 @@ export class RetryScheduler {
         `[RetryScheduler] Re-queuing task ${task.id} (attempt ${task.attempt})`,
       );
 
-      await this.queue.publish('task-queue', {
-        taskId: task.id,
-        instanceId: task.instanceId,
-        type: task.type,
-        payload: task.payload,
-        attempt: task.attempt,
-        maxAttempts: task.maxAttempts,
-        idempotencyKey: task.idempotencyKey,
-        scheduledAt: task.scheduledAt?.getTime() ?? Date.now(),
-      });
+      await this.taskQueue.publish(task);
 
-      task.scheduledAt = null;
       await this.taskRepository.saveTask(task);
     }
 

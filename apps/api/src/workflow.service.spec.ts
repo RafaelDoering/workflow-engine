@@ -7,13 +7,13 @@ import {
 import { Task, TaskStatus } from '@app/core/domain/task.entity';
 import type { WorkflowInstanceRepositoryPort } from '@app/core/ports/workflow-instance-repository.port';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
-import type { QueuePort } from '@app/core/ports/queue.port';
+import type { TaskQueuePort } from '@app/core/ports/task-queue.port';
 
 describe('WorkflowService', () => {
   let service: WorkflowService;
   let mockInstanceRepository: jest.Mocked<WorkflowInstanceRepositoryPort>;
   let mockTaskRepository: jest.Mocked<TaskRepositoryPort>;
-  let mockQueue: jest.Mocked<QueuePort>;
+  let mockTaskQueue: jest.Mocked<TaskQueuePort>;
   const payload = { orderId: '123' };
 
   beforeEach(async () => {
@@ -29,7 +29,7 @@ describe('WorkflowService', () => {
       findRetryableTasks: jest.fn(),
     };
 
-    mockQueue = {
+    mockTaskQueue = {
       publish: jest.fn(),
     };
 
@@ -45,8 +45,8 @@ describe('WorkflowService', () => {
           useValue: mockTaskRepository,
         },
         {
-          provide: 'QueuePort',
-          useValue: mockQueue,
+          provide: 'TaskQueuePort',
+          useValue: mockTaskQueue,
         },
       ],
     }).compile();
@@ -68,8 +68,7 @@ describe('WorkflowService', () => {
       expect(result).toHaveProperty('instanceId');
       expect(mockInstanceRepository.saveWorkflowInstance).toHaveBeenCalled();
       expect(mockTaskRepository.saveTask).toHaveBeenCalled();
-      expect(mockQueue.publish).toHaveBeenCalledWith(
-        'task-queue',
+      expect(mockTaskQueue.publish).toHaveBeenCalledWith(
         expect.objectContaining({
           instanceId: result.instanceId,
           type: 'fetch-orders',
@@ -192,8 +191,8 @@ describe('WorkflowService', () => {
           TaskStatus.SUCCEEDED,
           0,
           3,
-          null,
-          null,
+          '123',
+          new Date(),
           null,
           null,
           null,

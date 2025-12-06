@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@app/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
@@ -10,7 +10,7 @@ import { PrismaWorkflowInstanceRepository } from '@app/core/adapters/prisma-work
 import { PrismaTaskRepository } from '@app/core/adapters/prisma-task-repository';
 import { PrismaTaskLogRepository } from '@app/core/adapters/prisma-task-log-repository';
 import { KafkaConsumer } from '@app/core/adapters/kafka.consumer';
-import { KafkaProducer } from '@app/core/adapters/kafka.producer';
+import { KafkaProducer } from '@app/core/adapters/kafka-task-queue.producer';
 import { WorkerService } from './worker.service';
 import { TaskExecutor } from './task-executor.service';
 import { TaskStateService } from './task-state.service';
@@ -54,7 +54,7 @@ import { SendEmailHandler } from './handlers/send-email.handler';
       useClass: PrismaTaskLogRepository,
     },
     {
-      provide: 'QueuePort',
+      provide: 'TaskQueuePort',
       useClass: KafkaProducer,
     },
     KafkaConsumer,

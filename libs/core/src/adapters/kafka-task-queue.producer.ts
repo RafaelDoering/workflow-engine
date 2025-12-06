@@ -1,12 +1,16 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Kafka, Producer } from 'kafkajs';
 
-import { QueuePort } from '../ports/queue.port';
+import { TaskQueuePort } from '../ports/task-queue.port';
+import { Task } from '../domain/task.entity';
 
 @Injectable()
-export class KafkaProducer implements QueuePort, OnModuleInit, OnModuleDestroy {
+export class KafkaProducer
+  implements TaskQueuePort, OnModuleInit, OnModuleDestroy
+{
   private kafka: Kafka;
   private producer: Producer;
+  private topic: string = 'task-queue';
 
   constructor() {
     this.kafka = new Kafka({
@@ -24,9 +28,9 @@ export class KafkaProducer implements QueuePort, OnModuleInit, OnModuleDestroy {
     await this.producer.disconnect();
   }
 
-  async publish(topic: string, message: any): Promise<void> {
+  async publish(message: Task): Promise<void> {
     await this.producer.send({
-      topic,
+      topic: this.topic,
       messages: [{ value: JSON.stringify(message) }],
     });
   }

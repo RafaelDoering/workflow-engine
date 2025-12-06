@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@app/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
 import { PrismaWorkflowInstanceRepository } from '@app/core/adapters/prisma-workflow-instance-repository';
 import { PrismaTaskRepository } from '@app/core/adapters/prisma-task-repository';
-import { KafkaProducer } from '@app/core/adapters/kafka.producer';
+import { KafkaProducer } from '@app/core/adapters/kafka-task-queue.producer';
 import { ApiController } from './api.controller';
 import { WorkflowService } from './workflow.service';
 
@@ -32,7 +32,7 @@ import { WorkflowService } from './workflow.service';
       useClass: PrismaTaskRepository,
     },
     {
-      provide: 'QueuePort',
+      provide: 'TaskQueuePort',
       useClass: KafkaProducer,
     },
   ],

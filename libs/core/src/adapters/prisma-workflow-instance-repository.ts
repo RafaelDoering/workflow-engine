@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   PrismaClient,
   WorkflowInstanceStatus as PrismaWorkflowInstanceStatus,
-} from '@prisma/client';
+} from '@app/prisma/client';
 import {
   WorkflowInstance,
   WorkflowInstanceStatus,

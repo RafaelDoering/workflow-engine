@@ -2,12 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RetryScheduler } from './retry-scheduler.service';
 import { Task, TaskStatus } from '@app/core/domain/task.entity';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
-import type { QueuePort } from '@app/core/ports/queue.port';
+import type { TaskQueuePort } from '@app/core/ports/task-queue.port';
 
 describe('RetryScheduler', () => {
   let scheduler: RetryScheduler;
   let mockTaskRepository: jest.Mocked<TaskRepositoryPort>;
-  let mockQueue: jest.Mocked<QueuePort>;
+  let mockTaskQueue: jest.Mocked<TaskQueuePort>;
 
   beforeEach(async () => {
     mockTaskRepository = {
@@ -15,13 +15,13 @@ describe('RetryScheduler', () => {
       findByInstanceId: jest.fn(),
       findRetryableTasks: jest.fn(),
     };
-    mockQueue = { publish: jest.fn() };
+    mockTaskQueue = { publish: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RetryScheduler,
         { provide: 'TaskRepository', useValue: mockTaskRepository },
-        { provide: 'QueuePort', useValue: mockQueue },
+        { provide: 'TaskQueuePort', useValue: mockTaskQueue },
       ],
     }).compile();
 
@@ -53,15 +53,13 @@ describe('RetryScheduler', () => {
 
       await scheduler.pollRetryableTasks();
 
-      expect(mockQueue.publish).toHaveBeenCalledWith(
-        'task-queue',
+      expect(mockTaskQueue.publish).toHaveBeenCalledWith(
         expect.objectContaining({
-          taskId: 'task-1',
+          id: 'task-1',
           type: 'fetch-orders',
           attempt: 1,
         }),
       );
-      expect(retryableTask.scheduledAt).toBeNull();
       expect(mockTaskRepository.saveTask).toHaveBeenCalledWith(retryableTask);
     });
 
@@ -70,7 +68,7 @@ describe('RetryScheduler', () => {
 
       await scheduler.pollRetryableTasks();
 
-      expect(mockQueue.publish).not.toHaveBeenCalled();
+      expect(mockTaskQueue.publish).not.toHaveBeenCalled();
     });
 
     it('should process multiple retryable tasks', async () => {
@@ -83,7 +81,7 @@ describe('RetryScheduler', () => {
           TaskStatus.PENDING,
           1,
           3,
-          null,
+          '123',
           new Date(Date.now() - 1000),
           null,
           null,
@@ -97,7 +95,7 @@ describe('RetryScheduler', () => {
           TaskStatus.PENDING,
           2,
           3,
-          null,
+          '123',
           new Date(Date.now() - 2000),
           null,
           null,
@@ -109,7 +107,7 @@ describe('RetryScheduler', () => {
 
       await scheduler.pollRetryableTasks();
 
-      expect(mockQueue.publish).toHaveBeenCalledTimes(2);
+      expect(mockTaskQueue.publish).toHaveBeenCalledTimes(2);
       expect(mockTaskRepository.saveTask).toHaveBeenCalledTimes(2);
     });
   });

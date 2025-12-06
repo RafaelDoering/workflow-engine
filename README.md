@@ -25,6 +25,9 @@ docker compose up -d
 # Apply migrations
 npx prisma migrate dev
 
+# Generate Prisma Client
+npx prisma generate
+
 # Seed database
 npm run seed
 

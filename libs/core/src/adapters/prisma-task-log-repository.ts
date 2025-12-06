@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@app/prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { TaskLogRepositoryPort } from '../ports/task-log-repository.port';
 

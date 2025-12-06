@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@app/prisma/client';
 import { Workflow, WorkflowDefinitionSchema } from '../domain/workflow.entity';
 import { WorkflowRepositoryPort } from '../ports/workflow-repository.port';
 

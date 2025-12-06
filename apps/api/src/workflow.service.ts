@@ -8,7 +8,7 @@ import {
 import { Task, TaskStatus } from '@app/core/domain/task.entity';
 import type { WorkflowInstanceRepositoryPort } from '@app/core/ports/workflow-instance-repository.port';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
-import type { QueuePort } from '@app/core/ports/queue.port';
+import type { TaskQueuePort } from '@app/core/ports/task-queue.port';
 import type { TaskPayload } from '@app/core';
 
 export interface InstanceWithTasks {
@@ -22,7 +22,7 @@ export class WorkflowService {
     @Inject('WorkflowInstanceRepository')
     private instanceRepository: WorkflowInstanceRepositoryPort,
     @Inject('TaskRepository') private taskRepository: TaskRepositoryPort,
-    @Inject('QueuePort') private queue: QueuePort,
+    @Inject('TaskQueuePort') private taskQueue: TaskQueuePort,
   ) {}
 
   async startWorkflow(
@@ -57,16 +57,7 @@ export class WorkflowService {
     );
 
     await this.taskRepository.saveTask(task);
-    await this.queue.publish('task-queue', {
-      taskId: task.id,
-      instanceId: task.instanceId,
-      type: task.type,
-      payload: task.payload,
-      attempt: task.attempt,
-      maxAttempts: task.maxAttempts,
-      idempotencyKey: task.idempotencyKey,
-      scheduledAt: task.scheduledAt?.getTime(),
-    });
+    await this.taskQueue.publish(task);
 
     return { instanceId };
   }
