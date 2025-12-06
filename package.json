@@ -15,7 +15,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "seed": "npx ts-node -r tsconfig-paths/register seed.ts",
+    "seed": "npx ts-node -r tsconfig-paths/register scripts/seed.ts",
     "test:workflow": "npx ts-node -r tsconfig-paths/register scripts/test-workflow.ts"
   },
   "dependencies": {
