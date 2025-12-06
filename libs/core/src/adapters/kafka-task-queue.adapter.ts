@@ -1,4 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Kafka, Producer, Consumer, EachMessagePayload } from 'kafkajs';
 
 import { TaskQueuePort, TaskHandler } from '../ports/task-queue.port';
@@ -14,10 +15,12 @@ export class KafkaTaskQueueAdapter
   private topic: string = 'task-queue';
   private messageHandler: TaskHandler | null = null;
 
-  constructor() {
+  constructor(private configService: ConfigService) {
+    const brokerUrls = this.configService.getOrThrow<string>('BROKER_URLS');
+
     this.kafka = new Kafka({
       clientId: 'workflow-service',
-      brokers: ['localhost:19092'],
+      brokers: brokerUrls.split(','),
     });
     this.producer = this.kafka.producer();
     this.consumer = this.kafka.consumer({ groupId: 'workflow-workers' });
