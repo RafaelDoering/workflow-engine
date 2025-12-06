@@ -10,8 +10,12 @@ import { KafkaTaskQueueAdapter } from '@app/core/adapters/kafka-task-queue.adapt
 import { ApiController } from './api.controller';
 import { WorkflowService } from './workflow.service';
 
+import { validate } from '@app/core/config/configuration';
+
+import { LoggerModule } from '@app/core/logger/logger.module';
+
 @Module({
-  imports: [ConfigModule.forRoot()],
+  imports: [ConfigModule.forRoot({ validate }), LoggerModule],
   controllers: [ApiController],
   providers: [
     WorkflowService,

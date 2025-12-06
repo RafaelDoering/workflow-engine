@@ -20,8 +20,16 @@ import { CreateInvoiceHandler } from './handlers/create-invoice.handler';
 import { PdfProcessHandler } from './handlers/pdf-process.handler';
 import { SendEmailHandler } from './handlers/send-email.handler';
 
+import { validate } from '@app/core/config/configuration';
+
+import { LoggerModule } from '@app/core/logger/logger.module';
+
 @Module({
-  imports: [ConfigModule.forRoot(), ScheduleModule.forRoot()],
+  imports: [
+    ConfigModule.forRoot({ validate }),
+    ScheduleModule.forRoot(),
+    LoggerModule,
+  ],
   providers: [
     WorkerService,
     TaskExecutor,
