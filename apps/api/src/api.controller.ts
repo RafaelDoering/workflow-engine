@@ -1,18 +1,16 @@
 import { Controller, Post, Get, Body, Param } from '@nestjs/common';
 import { WorkflowService, InstanceWithTasks } from './workflow.service';
-import { TaskPayload } from '@app/core';
 import { WorkflowInstance } from '@app/core/domain/workflow-instance.entity';
-
-type StartWorkflowRequest = { payload: TaskPayload };
+import { StartWorkflowDto } from './dtos/start-workflow.dto';
 
 @Controller('workflows')
 export class ApiController {
-  constructor(private workflowService: WorkflowService) {}
+  constructor(private workflowService: WorkflowService) { }
 
   @Post(':id/start')
   async startWorkflow(
     @Param('id') id: string,
-    @Body() body: StartWorkflowRequest,
+    @Body() body: StartWorkflowDto,
   ): Promise<{ instanceId: string }> {
     return this.workflowService.startWorkflow(id, body.payload);
   }
