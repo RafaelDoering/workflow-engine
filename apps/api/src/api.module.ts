@@ -1,19 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaClient } from '@app/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
-
+import { PrismaClient } from '@app/prisma/client';
 import { PrismaWorkflowInstanceRepository } from '@app/core/adapters/prisma-workflow-instance-repository';
 import { PrismaWorkflowRepository } from '@app/core/adapters/prisma-workflow-repository';
 import { PrismaTaskRepository } from '@app/core/adapters/prisma-task-repository';
 import { KafkaTaskQueueAdapter } from '@app/core/adapters/kafka-task-queue.adapter';
+import { validate } from '@app/core/config/configuration';
+import { LoggerModule } from '@app/core/logger/logger.module';
 import { ApiController } from './api.controller';
 import { WorkflowService } from './workflow.service';
-
-import { validate } from '@app/core/config/configuration';
-
-import { LoggerModule } from '@app/core/logger/logger.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ validate }), LoggerModule],

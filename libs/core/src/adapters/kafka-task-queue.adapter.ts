@@ -1,7 +1,6 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Kafka, Producer, Consumer, EachMessagePayload } from 'kafkajs';
-
 import { TaskQueuePort, TaskHandler } from '../ports/task-queue.port';
 import { Task } from '../domain/task.entity';
 

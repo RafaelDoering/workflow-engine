@@ -28,6 +28,7 @@ export class TaskExecutor {
     if (!handler) {
       throw new Error(`No handler found for task type: ${taskType}`);
     }
+
     return handler.execute(payload);
   }
 }

@@ -28,7 +28,21 @@ export class WorkflowService {
     private workflowRepository: WorkflowRepositoryPort,
     @Inject('TaskRepository') private taskRepository: TaskRepositoryPort,
     @Inject('TaskQueuePort') private taskQueue: TaskQueuePort,
-  ) { }
+  ) {}
+
+  async createWorkflow(dto: CreateWorkflowDto): Promise<{ id: string }> {
+    const id = uuidv4();
+    const now = new Date();
+    const workflow = new Workflow(id, dto.name, dto.definition, now, now);
+
+    await this.workflowRepository.saveWorkflow(workflow);
+
+    return { id };
+  }
+
+  async listWorkflows(): Promise<Workflow[]> {
+    return this.workflowRepository.findAllWorkflows();
+  }
 
   async startWorkflow(
     workflowId: string,
@@ -88,6 +102,7 @@ export class WorkflowService {
     if (!instance) return null;
 
     const tasks = await this.taskRepository.findByInstanceId(instanceId);
+
     return { instance, tasks };
   }
 
@@ -102,19 +117,7 @@ export class WorkflowService {
 
     instance.status = WorkflowInstanceStatus.CANCELLED;
     await this.instanceRepository.saveWorkflowInstance(instance);
+
     return { success: true };
-  }
-
-  async createWorkflow(dto: CreateWorkflowDto): Promise<{ id: string }> {
-    const id = uuidv4();
-
-    const now = new Date();
-    const workflow = new Workflow(id, dto.name, dto.definition, now, now);
-    await this.workflowRepository.saveWorkflow(workflow);
-    return { id };
-  }
-
-  async listWorkflows(): Promise<Workflow[]> {
-    return this.workflowRepository.findAllWorkflows();
   }
 }

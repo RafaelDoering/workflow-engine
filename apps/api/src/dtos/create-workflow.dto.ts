@@ -17,7 +17,7 @@ export class CreateWorkflowDto {
     description: 'The definition for the workflow',
     example: {
       steps: ['fetch-orders', 'create-invoice', 'pdf-process', 'send-email'],
-    }
+    },
   })
   definition: WorkflowDefinition;
 }

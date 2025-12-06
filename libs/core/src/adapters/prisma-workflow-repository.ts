@@ -6,7 +6,7 @@ import { WorkflowRepositoryPort } from '../ports/workflow-repository.port';
 
 @Injectable()
 export class PrismaWorkflowRepository implements WorkflowRepositoryPort {
-  constructor(private prisma: PrismaClient) { }
+  constructor(private prisma: PrismaClient) {}
 
   async saveWorkflow(workflow: Workflow): Promise<void> {
     await this.prisma.workflow.upsert({

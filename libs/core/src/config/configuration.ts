@@ -1,9 +1,4 @@
-import {
-  IsString,
-  IsNumber,
-  IsEnum,
-  validateSync,
-} from 'class-validator';
+import { IsString, IsNumber, IsEnum, validateSync } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 
 export enum LogLevel {
