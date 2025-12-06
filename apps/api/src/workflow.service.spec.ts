@@ -4,14 +4,17 @@ import {
   WorkflowInstance,
   WorkflowInstanceStatus,
 } from '@app/core/domain/workflow-instance.entity';
+import { Workflow } from '@app/core/domain/workflow.entity';
 import { Task, TaskStatus } from '@app/core/domain/task.entity';
 import type { WorkflowInstanceRepositoryPort } from '@app/core/ports/workflow-instance-repository.port';
+import type { WorkflowRepositoryPort } from '@app/core/ports/workflow-repository.port';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
 import type { TaskQueuePort } from '@app/core/ports/task-queue.port';
 
 describe('WorkflowService', () => {
   let service: WorkflowService;
   let mockInstanceRepository: jest.Mocked<WorkflowInstanceRepositoryPort>;
+  let mockWorkflowRepository: jest.Mocked<WorkflowRepositoryPort>;
   let mockTaskRepository: jest.Mocked<TaskRepositoryPort>;
   let mockTaskQueue: jest.Mocked<TaskQueuePort>;
   const payload = { orderId: '123' };
@@ -21,6 +24,12 @@ describe('WorkflowService', () => {
       saveWorkflowInstance: jest.fn(),
       findWorkflowInstanceById: jest.fn(),
       findByWorkflowId: jest.fn(),
+    };
+
+    mockWorkflowRepository = {
+      saveWorkflow: jest.fn(),
+      findWorkflowById: jest.fn(),
+      findAllWorkflows: jest.fn(),
     };
 
     mockTaskRepository = {
@@ -40,6 +49,10 @@ describe('WorkflowService', () => {
         {
           provide: 'WorkflowInstanceRepository',
           useValue: mockInstanceRepository,
+        },
+        {
+          provide: 'WorkflowRepository',
+          useValue: mockWorkflowRepository,
         },
         {
           provide: 'TaskRepository',
@@ -64,6 +77,17 @@ describe('WorkflowService', () => {
       const workflowId = 'workflow-123';
       const payload = { orderId: 'order-456' };
 
+      const mockWorkflow: Workflow = {
+        id: workflowId,
+        name: 'test-workflow',
+        definition: {
+          steps: ['fetch-orders', 'process'],
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockWorkflowRepository.findWorkflowById.mockResolvedValue(mockWorkflow);
+
       const result = await service.startWorkflow(workflowId, payload);
 
       expect(result).toHaveProperty('instanceId');
@@ -79,6 +103,14 @@ describe('WorkflowService', () => {
     });
 
     it('should create workflow instance with RUNNING status', async () => {
+      mockWorkflowRepository.findWorkflowById.mockResolvedValue({
+        id: 'workflow-123',
+        name: 'test-workflow',
+        definition: { steps: ['step1'] },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
       await service.startWorkflow('workflow-123', payload);
 
       const savedInstance =
@@ -87,6 +119,14 @@ describe('WorkflowService', () => {
     });
 
     it('should create task with PENDING status', async () => {
+      mockWorkflowRepository.findWorkflowById.mockResolvedValue({
+        id: 'workflow-123',
+        name: 'test-workflow',
+        definition: { steps: ['step1'] },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
       await service.startWorkflow('workflow-123', payload);
 
       const savedTask = mockTaskRepository.saveTask.mock.calls[0][0];

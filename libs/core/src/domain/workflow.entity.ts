@@ -1,10 +1,10 @@
-import { z } from 'zod';
+import { IsArray, IsString } from 'class-validator';
 
-export const WorkflowDefinitionSchema = z.object({
-  steps: z.array(z.string()),
-});
-
-export type WorkflowDefinition = z.infer<typeof WorkflowDefinitionSchema>;
+export class WorkflowDefinition {
+  @IsArray()
+  @IsString({ each: true })
+  steps: string[];
+}
 
 export class Workflow {
   constructor(

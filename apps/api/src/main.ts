@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ApiModule } from './api.module';
 
@@ -8,6 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(ApiModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   const config = new DocumentBuilder()
     .setTitle('Workflow Manager API')

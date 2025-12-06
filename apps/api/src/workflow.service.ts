@@ -5,11 +5,14 @@ import {
   WorkflowInstance,
   WorkflowInstanceStatus,
 } from '@app/core/domain/workflow-instance.entity';
+import { Workflow } from '@app/core/domain/workflow.entity';
 import { Task, TaskStatus } from '@app/core/domain/task.entity';
 import type { WorkflowInstanceRepositoryPort } from '@app/core/ports/workflow-instance-repository.port';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
 import type { TaskQueuePort } from '@app/core/ports/task-queue.port';
+import type { WorkflowRepositoryPort } from '@app/core/ports/workflow-repository.port';
 import type { TaskPayload } from '@app/core';
+import type { CreateWorkflowDto } from './dtos/create-workflow.dto';
 
 export interface InstanceWithTasks {
   instance: WorkflowInstance;
@@ -21,14 +24,27 @@ export class WorkflowService {
   constructor(
     @Inject('WorkflowInstanceRepository')
     private instanceRepository: WorkflowInstanceRepositoryPort,
+    @Inject('WorkflowRepository')
+    private workflowRepository: WorkflowRepositoryPort,
     @Inject('TaskRepository') private taskRepository: TaskRepositoryPort,
     @Inject('TaskQueuePort') private taskQueue: TaskQueuePort,
-  ) {}
+  ) { }
 
   async startWorkflow(
     workflowId: string,
     payload: TaskPayload,
   ): Promise<{ instanceId: string }> {
+    const workflow = await this.workflowRepository.findWorkflowById(workflowId);
+    if (!workflow) {
+      throw new Error(`Workflow definition not found for id: ${workflowId}`);
+    }
+
+    if (!workflow.definition.steps.length) {
+      throw new Error(`Workflow ${workflowId} has no steps defined`);
+    }
+
+    const firstStepType = workflow.definition.steps[0];
+
     const instanceId = uuidv4();
     const instance = new WorkflowInstance(
       instanceId,
@@ -44,12 +60,12 @@ export class WorkflowService {
     const task = new Task(
       taskId,
       instanceId,
-      'fetch-orders',
+      firstStepType,
       payload,
       TaskStatus.PENDING,
       0,
       3,
-      `${instanceId}-fetch-orders`,
+      `${instanceId}-${firstStepType}`,
       new Date(),
       null,
       null,
@@ -87,5 +103,18 @@ export class WorkflowService {
     instance.status = WorkflowInstanceStatus.CANCELLED;
     await this.instanceRepository.saveWorkflowInstance(instance);
     return { success: true };
+  }
+
+  async createWorkflow(dto: CreateWorkflowDto): Promise<{ id: string }> {
+    const id = uuidv4();
+
+    const now = new Date();
+    const workflow = new Workflow(id, dto.name, dto.definition, now, now);
+    await this.workflowRepository.saveWorkflow(workflow);
+    return { id };
+  }
+
+  async listWorkflows(): Promise<Workflow[]> {
+    return this.workflowRepository.findAllWorkflows();
   }
 }

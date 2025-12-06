@@ -1,43 +1,92 @@
-import { z } from 'zod';
+import {
+  IsString,
+  IsNumber,
+  IsArray,
+  ValidateNested,
+  IsOptional,
+  IsDateString,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
-export const TaskPayloadSchema = z.object({
-  orderId: z.string().optional(),
-  orders: z
-    .array(
-      z.object({
-        id: z.number(),
-        amount: z.number(),
-        items: z.number(),
-      }),
-    )
-    .optional(),
-  invoice: z
-    .object({
-      invoiceId: z.string(),
-      customerId: z.string(),
-      total: z.number(),
-      createdAt: z.string(),
-    })
-    .optional(),
-  pdf: z
-    .object({
-      pdfUrl: z.string(),
-      size: z.number(),
-      generatedAt: z.string(),
-    })
-    .optional(),
-  email: z
-    .object({
-      messageId: z.string(),
-      recipient: z.string(),
-      subject: z.string(),
-      sentAt: z.string(),
-      status: z.string(),
-    })
-    .optional(),
-});
+export class TaskOrder {
+  @IsNumber()
+  id: number;
 
-export type TaskPayload = z.infer<typeof TaskPayloadSchema>;
+  @IsNumber()
+  amount: number;
+
+  @IsNumber()
+  items: number;
+}
+
+export class TaskInvoice {
+  @IsString()
+  invoiceId: string;
+
+  @IsString()
+  customerId: string;
+
+  @IsNumber()
+  total: number;
+
+  @IsDateString()
+  createdAt: string;
+}
+
+export class TaskPdf {
+  @IsString()
+  pdfUrl: string;
+
+  @IsNumber()
+  size: number;
+
+  @IsDateString()
+  generatedAt: string;
+}
+
+export class TaskEmail {
+  @IsString()
+  messageId: string;
+
+  @IsString()
+  recipient: string;
+
+  @IsString()
+  subject: string;
+
+  @IsDateString()
+  sentAt: string;
+
+  @IsString()
+  status: string;
+}
+
+export class TaskPayload {
+  @IsString()
+  @IsOptional()
+  orderId?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TaskOrder)
+  @IsOptional()
+  orders?: TaskOrder[];
+
+  @ValidateNested()
+  @Type(() => TaskInvoice)
+  @IsOptional()
+  invoice?: TaskInvoice;
+
+  @ValidateNested()
+  @Type(() => TaskPdf)
+  @IsOptional()
+  pdf?: TaskPdf;
+
+  @ValidateNested()
+  @Type(() => TaskEmail)
+  @IsOptional()
+  email?: TaskEmail;
+}
 
 export enum TaskStatus {
   PENDING = 'PENDING',

@@ -3,7 +3,8 @@ import {
   PrismaClient,
   TaskStatus as PrismaTaskStatus,
 } from '@app/prisma/client';
-import { Task, TaskPayloadSchema, TaskStatus } from '../domain/task.entity';
+import { plainToInstance } from 'class-transformer';
+import { Task, TaskPayload, TaskStatus } from '../domain/task.entity';
 import { TaskRepositoryPort } from '../ports/task-repository.port';
 
 @Injectable()
@@ -33,7 +34,8 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
         id: task.id,
         workflowInstanceId: task.instanceId,
         type: task.type,
-        payload: task.payload,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        payload: task.payload as any,
         status: this.toPrismaStatus(task.status),
         attempt: task.attempt,
         maxAttempts: task.maxAttempts,
@@ -51,7 +53,7 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
       where: { workflowInstanceId: instanceId },
     });
     return records.map((record) => {
-      const payload = TaskPayloadSchema.parse(record.payload);
+      const payload = plainToInstance(TaskPayload, record.payload);
 
       return new Task(
         record.id,
@@ -78,7 +80,7 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
       },
     });
     return records.map((record) => {
-      const payload = TaskPayloadSchema.parse(record.payload);
+      const payload = plainToInstance(TaskPayload, record.payload);
 
       return new Task(
         record.id,

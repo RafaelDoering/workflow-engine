@@ -1,20 +1,45 @@
-import { z } from 'zod';
+import {
+  IsString,
+  IsNumber,
+  IsEnum,
+  validateSync,
+} from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
-export const envSchema = z.object({
-  DATABASE_URL: z.string().url(),
-  BROKER_URLS: z.string().min(1), // Comma separated list of broker URLs
-  PORT: z.coerce.number().default(3000),
-  LOG_LEVEL: z
-    .enum(['error', 'warn', 'info', 'debug', 'verbose'])
-    .default('info'),
-});
+export enum LogLevel {
+  ERROR = 'error',
+  WARN = 'warn',
+  INFO = 'info',
+  DEBUG = 'debug',
+  VERBOSE = 'verbose',
+}
 
-export type EnvConfig = z.infer<typeof envSchema>;
+class EnvironmentVariables {
+  @IsString()
+  DATABASE_URL: string;
+
+  @IsString()
+  BROKER_URLS: string;
+
+  @IsNumber()
+  PORT: number = 3000;
+
+  @IsEnum(LogLevel)
+  LOG_LEVEL: LogLevel = LogLevel.INFO;
+}
+
+export type EnvConfig = EnvironmentVariables;
 
 export const validate = (config: Record<string, unknown>) => {
-  const result = envSchema.safeParse(config);
-  if (!result.success) {
-    throw new Error(`Config validation error: ${result.error.toString()}`);
+  const validatedConfig = plainToInstance(EnvironmentVariables, config, {
+    enableImplicitConversion: true,
+  });
+  const errors = validateSync(validatedConfig, {
+    skipMissingProperties: false,
+  });
+
+  if (errors.length > 0) {
+    throw new Error(errors.toString());
   }
-  return result.data;
+  return validatedConfig;
 };
