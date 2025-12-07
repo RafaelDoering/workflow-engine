@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { Task, TaskStatus } from '@app/core/domain/task.entity';
+import { Task, TaskPayload, TaskStatus } from '@app/core/domain/task.entity';
 import { WorkflowInstanceStatus } from '@app/core/domain/workflow-instance.entity';
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
 import type { WorkflowInstanceRepositoryPort } from '@app/core/ports/workflow-instance-repository.port';
@@ -28,8 +28,9 @@ export class TaskStateService {
     );
   }
 
-  async markTaskSucceeded(task: Task): Promise<void> {
+  async markTaskSucceeded(task: Task, result: TaskPayload): Promise<void> {
     task.status = TaskStatus.SUCCEEDED;
+    task.result = result;
     task.finishedAt = new Date();
     await this.taskRepository.saveTask(task);
     await this.taskLogRepository.createLog(task.id, 'INFO', 'Task succeeded');

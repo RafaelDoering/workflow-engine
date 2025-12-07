@@ -21,6 +21,7 @@ export class CreateInvoiceHandler implements TaskHandler {
   }
 
   async compensate(payload: TaskPayload): Promise<void> {
+    console.log('[CreateInvoiceHandler] Compensating:', payload);
     if (!payload.invoice?.invoiceId) {
       console.log('[CreateInvoiceHandler] No invoice to compensate');
       return;

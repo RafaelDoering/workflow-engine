@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CompensationService } from './compensation.service';
 import { TaskExecutor } from './task-executor.service';
-import { Task, TaskStatus } from '@app/core/domain/task.entity';
+import { Task, TaskPayload, TaskStatus } from '@app/core/domain/task.entity';
 import {
   WorkflowInstance,
   WorkflowInstanceStatus,
@@ -119,9 +119,11 @@ describe('CompensationService', () => {
         'key-1',
         new Date(),
         new Date(),
+        null,
         new Date(),
         null,
         null,
+        0,
       );
 
       const task2 = new Task(
@@ -135,9 +137,11 @@ describe('CompensationService', () => {
         'key-2',
         new Date(),
         new Date(),
+        null,
         new Date(),
         null,
         null,
+        0,
       );
 
       const task3 = new Task(
@@ -159,9 +163,11 @@ describe('CompensationService', () => {
         'key-3',
         new Date(),
         new Date(),
+        null,
         new Date(),
         null,
         null,
+        0,
       );
 
       mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(
@@ -207,9 +213,11 @@ describe('CompensationService', () => {
         'key-1',
         new Date(),
         new Date(),
+        null,
         new Date(),
         null,
         null,
+        0,
       );
 
       const pendingTask = new Task(
@@ -239,9 +247,12 @@ describe('CompensationService', () => {
         'key-3',
         new Date(),
         new Date(),
+        null,
         new Date(),
         'Error',
         null,
+        0,
+        3,
       );
 
       mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(
@@ -264,7 +275,7 @@ describe('CompensationService', () => {
       );
     });
 
-    it('should stop compensating if one task fails', async () => {
+    it('should stop compensation and mark instance as DEAD_LETTER when task reaches DEAD_LETTER', async () => {
       const task1 = new Task(
         'task-1',
         instanceId,
@@ -276,9 +287,11 @@ describe('CompensationService', () => {
         'key-1',
         new Date(),
         new Date(),
+        null,
         new Date(),
         null,
         null,
+        0,
       );
 
       const task2 = new Task(
@@ -292,9 +305,11 @@ describe('CompensationService', () => {
         'key-2',
         new Date(),
         new Date(),
+        null,
         new Date(),
         null,
         null,
+        0,
       );
 
       mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(
@@ -302,34 +317,40 @@ describe('CompensationService', () => {
       );
       mockWorkflowRepository.findWorkflowById.mockResolvedValue(workflow);
       mockTaskRepository.findByInstanceId.mockResolvedValue([task1, task2]);
-      mockTaskExecutor.compensate
-        .mockRejectedValueOnce(new Error('Compensation failed'))
-        .mockResolvedValueOnce();
-
-      await expect(service.compensateWorkflow(instanceId)).rejects.toThrow(
-        'Compensation failed',
+      mockTaskExecutor.compensate.mockRejectedValue(
+        new Error('Compensation failed'),
       );
+      jest.useFakeTimers();
 
-      expect(mockTaskExecutor.compensate).toHaveBeenCalledTimes(1);
+      const resultPromise = service.compensateWorkflow(instanceId);
+
+      for (let i = 0; i < 3; i++) {
+        await jest.runAllTimersAsync();
+      }
+
+      await resultPromise;
+
+      expect(mockTaskExecutor.compensate).toHaveBeenCalledTimes(3);
       expect(mockTaskExecutor.compensate).toHaveBeenCalledWith(
         'pdf-process',
         task2.payload,
       );
-      expect(mockTaskLogRepository.createLog).toHaveBeenCalledWith(
-        task2.id,
-        'ERROR',
-        expect.stringContaining('Compensation failed'),
-      );
       expect(mockTaskRepository.saveTask).toHaveBeenCalledWith(
         expect.objectContaining({
           id: task2.id,
-          status: TaskStatus.FAILED,
+          status: TaskStatus.DEAD_LETTER,
         }),
+      );
+      expect(instance.status).toBe(WorkflowInstanceStatus.DEAD_LETTER);
+      expect(mockInstanceRepository.saveWorkflowInstance).toHaveBeenCalledWith(
+        instance,
       );
       expect(mockTaskExecutor.compensate).not.toHaveBeenCalledWith(
         'create-invoice',
         task1.payload,
       );
+
+      jest.useRealTimers();
     });
 
     it('should return early if no succeeded tasks', async () => {
@@ -362,42 +383,52 @@ describe('CompensationService', () => {
   });
 
   describe('compensateTask', () => {
-    const task = new Task(
-      'task-1',
-      'instance-1',
-      'create-invoice',
-      {
-        orderId: 'ORD-1',
-        invoice: {
-          invoiceId: 'INV-1',
-          customerId: 'CUST-1',
-          total: 100,
-          createdAt: new Date().toISOString(),
+    let task: Task;
+
+    beforeEach(() => {
+      task = new Task(
+        'task-1',
+        'instance-1',
+        'create-invoice',
+        {
+          orderId: 'ORD-1',
+          invoice: {
+            invoiceId: 'INV-1',
+            customerId: 'CUST-1',
+            total: 100,
+            createdAt: new Date().toISOString(),
+          },
         },
-      },
-      TaskStatus.SUCCEEDED,
-      0,
-      3,
-      'key-1',
-      new Date(),
-      new Date(),
-      new Date(),
-      null,
-      null,
-    );
+        TaskStatus.SUCCEEDED,
+        0,
+        3,
+        'key-1',
+        new Date(),
+        new Date(),
+        null,
+        new Date(),
+        null,
+        null,
+        0,
+        3,
+      );
+    });
 
     it('should mark task as compensating and then compensated', async () => {
+      task.compensationAttempt = 0;
       mockTaskExecutor.compensate.mockResolvedValue();
 
-      await service.compensateTask(task);
+      const result = await service.compensateTask(task);
 
+      expect(result).toBe('SUCCESS');
       expect(task.status).toBe(TaskStatus.COMPENSATED);
       expect(task.compensatedAt).toBeInstanceOf(Date);
-      expect(mockTaskRepository.saveTask).toHaveBeenCalledTimes(2);
+      expect(task.compensationAttempt).toBe(0);
+      expect(mockTaskRepository.saveTask).toHaveBeenCalled();
       expect(mockTaskLogRepository.createLog).toHaveBeenCalledWith(
         task.id,
         'INFO',
-        'Starting compensation',
+        expect.stringContaining('Starting compensation attempt'),
       );
       expect(mockTaskLogRepository.createLog).toHaveBeenCalledWith(
         task.id,
@@ -410,18 +441,86 @@ describe('CompensationService', () => {
       );
     });
 
-    it('should handle compensation errors', async () => {
+    it('should retry compensation up to 3 times before marking as DEAD_LETTER', async () => {
+      task.compensationAttempt = 0;
       const error = new Error('Compensation failed');
       mockTaskExecutor.compensate.mockRejectedValue(error);
+      jest.useFakeTimers();
 
-      await expect(service.compensateTask(task)).rejects.toThrow(error);
+      const resultPromise = service.compensateTask(task);
 
-      expect(task.status).toBe(TaskStatus.FAILED);
-      expect(task.lastError).toContain('Compensation error');
+      for (let i = 0; i < 3; i++) {
+        await jest.runAllTimersAsync();
+      }
+
+      const result = await resultPromise;
+
+      expect(result).toBe('DEAD_LETTER');
+      expect(task.status).toBe(TaskStatus.DEAD_LETTER);
+      expect(task.compensationAttempt).toBe(3);
+      expect(task.lastError).toContain('Compensation failed after 3 attempts');
+      expect(mockTaskExecutor.compensate).toHaveBeenCalledTimes(3);
       expect(mockTaskLogRepository.createLog).toHaveBeenCalledWith(
         task.id,
         'ERROR',
-        expect.stringContaining('Compensation failed'),
+        expect.stringContaining('marked as DEAD_LETTER'),
+      );
+
+      jest.useRealTimers();
+    });
+
+    it('should succeed on retry after initial failure', async () => {
+      const error = new Error('Compensation failed');
+      mockTaskExecutor.compensate
+        .mockRejectedValueOnce(error)
+        .mockResolvedValueOnce();
+      jest.useFakeTimers();
+
+      // Reset compensation attempt for this test
+      task.compensationAttempt = 0;
+
+      const resultPromise = service.compensateTask(task);
+
+      await jest.runAllTimersAsync();
+
+      const result = await resultPromise;
+
+      expect(result).toBe('SUCCESS');
+      expect(task.status).toBe(TaskStatus.COMPENSATED);
+      expect(mockTaskExecutor.compensate).toHaveBeenCalledTimes(2);
+
+      jest.useRealTimers();
+    });
+
+    it('should use saved result for compensation when available', async () => {
+      const savedResult: TaskPayload = {
+        orderId: 'ORD-1',
+        invoice: {
+          invoiceId: 'INV-123',
+          customerId: 'CUST-1',
+          total: 200,
+          createdAt: new Date().toISOString(),
+        },
+        pdf: {
+          pdfUrl: 'https://example.com/invoice.pdf',
+          size: 1024,
+          generatedAt: new Date().toISOString(),
+        },
+      };
+      task.result = savedResult;
+      task.compensationAttempt = 0;
+      mockTaskExecutor.compensate.mockResolvedValue();
+
+      await service.compensateTask(task);
+
+      // Should use the saved result, not the original payload
+      expect(mockTaskExecutor.compensate).toHaveBeenCalledWith(
+        'create-invoice',
+        savedResult,
+      );
+      expect(mockTaskExecutor.compensate).not.toHaveBeenCalledWith(
+        'create-invoice',
+        task.payload,
       );
     });
   });

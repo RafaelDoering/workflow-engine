@@ -56,7 +56,7 @@ export class WorkerService implements OnModuleInit {
         message.type,
         message.payload,
       );
-      await this.taskState.markTaskSucceeded(task);
+      await this.taskState.markTaskSucceeded(task, result);
       console.log(`[WorkerService] Task ${message.id} succeeded`);
 
       await this.taskChain.queueNextTask(task, result);

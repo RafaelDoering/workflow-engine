@@ -17,7 +17,7 @@ export class TaskChainService {
     private taskRepository: TaskRepositoryPort,
     @Inject('TaskQueuePort')
     private taskQueue: TaskQueuePort,
-  ) { }
+  ) {}
 
   async queueNextTask(
     completedTask: Task,
@@ -75,6 +75,7 @@ export class TaskChainService {
       3,
       `${completedTask.instanceId}-${nextType}`,
       new Date(),
+      null,
       null,
       null,
       null,

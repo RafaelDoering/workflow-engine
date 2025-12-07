@@ -37,25 +37,29 @@ enum WorkflowInstanceStatus {
   SUCCEEDED
   FAILED
   CANCELLED
+  DEAD_LETTER
 }
 
 model Task {
-  id                 String             @id @default(uuid())
-  workflowInstanceId String
-  workflowInstance   WorkflowInstance   @relation(fields: [workflowInstanceId], references: [id])
-  type               String
-  payload            Json
-  status             TaskStatus
-  attempt            Int                @default(0)
-  maxAttempts        Int                @default(3)
-  idempotencyKey     String
-  scheduledAt        DateTime
-  startedAt          DateTime?
-  finishedAt         DateTime?
-  lastError          String?
-  compensatedAt      DateTime?
-  logs               TaskLog[]
-  retryEntries       RetryEntry[]
+  id                      String           @id @default(uuid())
+  workflowInstanceId      String
+  workflowInstance        WorkflowInstance @relation(fields: [workflowInstanceId], references: [id])
+  type                    String
+  payload                 Json
+  status                  TaskStatus
+  attempt                 Int              @default(0)
+  maxAttempts             Int              @default(3)
+  idempotencyKey          String
+  scheduledAt             DateTime
+  startedAt               DateTime?
+  finishedAt              DateTime?
+  lastError               String?
+  compensatedAt           DateTime?
+  compensationAttempt     Int              @default(0)
+  maxCompensationAttempts Int              @default(3)
+  result                  Json?
+  logs                    TaskLog[]
+  retryEntries            RetryEntry[]
 }
 
 enum TaskStatus {

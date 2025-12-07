@@ -1,4 +1,4 @@
-FROM node:20-alpine As development
+FROM node:20-alpine AS development
 
 WORKDIR /usr/src/app
 
@@ -12,7 +12,7 @@ RUN npx prisma generate
 
 RUN npm run build api
 
-FROM node:20-alpine as production
+FROM node:20-alpine AS production
 
 ENV NODE_ENV=production
 

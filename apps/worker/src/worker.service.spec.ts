@@ -88,6 +88,7 @@ describe('WorkerService', () => {
       null,
       null,
       null,
+      null,
     );
 
     beforeEach(async () => {
@@ -108,6 +109,7 @@ describe('WorkerService', () => {
         null,
         null,
         null,
+        null,
       );
       const result = { orderId: 'ORD-1', orders: [] };
 
@@ -121,7 +123,10 @@ describe('WorkerService', () => {
         'fetch-orders',
         taskMessage.payload,
       );
-      expect(mockTaskState.markTaskSucceeded).toHaveBeenCalledWith(task);
+      expect(mockTaskState.markTaskSucceeded).toHaveBeenCalledWith(
+        task,
+        result,
+      );
       expect(mockTaskChain.queueNextTask).toHaveBeenCalledWith(task, result);
       expect(mockTaskState.checkWorkflowCompletion).toHaveBeenCalledWith(
         task.instanceId,
@@ -150,6 +155,7 @@ describe('WorkerService', () => {
         null,
         null,
         null,
+        null,
       );
 
       mockTaskRepository.findByInstanceId.mockResolvedValue([task]);
@@ -170,6 +176,7 @@ describe('WorkerService', () => {
         3,
         '123',
         new Date(),
+        null,
         null,
         null,
         null,
@@ -196,6 +203,7 @@ describe('WorkerService', () => {
         null,
         null,
         null,
+        null,
       );
 
       mockTaskRepository.findByInstanceId.mockResolvedValue([task]);
@@ -216,6 +224,7 @@ describe('WorkerService', () => {
         3,
         '123',
         new Date(),
+        null,
         null,
         null,
         null,
@@ -244,6 +253,7 @@ describe('WorkerService', () => {
         null,
         null,
         null,
+        null,
       );
       const error = new Error('Permanent error');
 
@@ -269,6 +279,7 @@ describe('WorkerService', () => {
         3,
         '123',
         new Date(),
+        null,
         null,
         null,
         null,

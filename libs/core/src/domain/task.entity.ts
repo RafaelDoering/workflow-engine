@@ -105,13 +105,16 @@ export class Task {
     public readonly type: string,
     public readonly payload: TaskPayload,
     public status: TaskStatus,
-    public attempt: number,
-    public readonly maxAttempts: number,
+    public attempt: number = 0,
+    public readonly maxAttempts: number = 3,
     public readonly idempotencyKey: string,
     public scheduledAt: Date,
     public startedAt: Date | null,
+    public result: TaskPayload | null = null,
     public finishedAt: Date | null,
     public lastError: string | null,
     public compensatedAt: Date | null = null,
+    public compensationAttempt: number = 0,
+    public readonly maxCompensationAttempts: number = 3,
   ) {}
 }

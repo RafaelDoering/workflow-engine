@@ -72,6 +72,7 @@ describe('TaskStateService', () => {
         null,
         null,
         null,
+        null,
       );
 
       await service.markTaskRunning(task);
@@ -102,13 +103,16 @@ describe('TaskStateService', () => {
         new Date(),
         null,
         null,
+        null,
       );
 
       mockTaskRepository.findByInstanceId.mockResolvedValue([task]);
+      const result = { orderId: 'ORD-1', orders: [] };
 
-      await service.markTaskSucceeded(task);
+      await service.markTaskSucceeded(task, result);
 
       expect(task.status).toBe(TaskStatus.SUCCEEDED);
+      expect(task.result).toBe(result);
       expect(mockTaskLogRepository.createLog).toHaveBeenCalledWith(
         task.id,
         'INFO',
@@ -130,6 +134,7 @@ describe('TaskStateService', () => {
         '123',
         new Date(),
         new Date(),
+        null,
         null,
         null,
       );
@@ -158,6 +163,7 @@ describe('TaskStateService', () => {
         '123',
         new Date(),
         new Date(),
+        null,
         null,
         null,
       );
@@ -198,6 +204,7 @@ describe('TaskStateService', () => {
         '123',
         new Date(),
         new Date(),
+        null,
         null,
         null,
       );
@@ -246,6 +253,7 @@ describe('TaskStateService', () => {
         new Date(),
         null,
         null,
+        null,
       );
       const instance = new WorkflowInstance(
         'instance-1',
@@ -282,6 +290,7 @@ describe('TaskStateService', () => {
         new Date(),
         null,
         null,
+        null,
       );
       const task2 = new Task(
         'task-2',
@@ -293,6 +302,7 @@ describe('TaskStateService', () => {
         3,
         '124',
         new Date(),
+        null,
         null,
         null,
         null,

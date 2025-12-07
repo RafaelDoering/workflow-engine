@@ -30,6 +30,10 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
         finishedAt: task.finishedAt,
         lastError: task.lastError,
         compensatedAt: task.compensatedAt,
+        compensationAttempt: task.compensationAttempt,
+        maxCompensationAttempts: task.maxCompensationAttempts,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        result: task.result as any,
       },
       create: {
         id: task.id,
@@ -46,6 +50,10 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
         finishedAt: task.finishedAt,
         lastError: task.lastError,
         compensatedAt: task.compensatedAt,
+        compensationAttempt: task.compensationAttempt,
+        maxCompensationAttempts: task.maxCompensationAttempts,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        result: task.result as any,
       },
     });
   }
@@ -56,6 +64,9 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
     });
     return records.map((record) => {
       const payload = plainToInstance(TaskPayload, record.payload);
+      const result = record.result
+        ? plainToInstance(TaskPayload, record.result)
+        : null;
 
       return new Task(
         record.id,
@@ -68,9 +79,12 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
         record.idempotencyKey,
         record.scheduledAt,
         record.startedAt,
+        result,
         record.finishedAt,
         record.lastError,
         record.compensatedAt,
+        record.compensationAttempt,
+        record.maxCompensationAttempts,
       );
     });
   }
@@ -84,6 +98,9 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
     });
     return records.map((record) => {
       const payload = plainToInstance(TaskPayload, record.payload);
+      const result = record.result
+        ? plainToInstance(TaskPayload, record.result)
+        : null;
 
       return new Task(
         record.id,
@@ -96,9 +113,12 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
         record.idempotencyKey,
         record.scheduledAt,
         record.startedAt,
+        result,
         record.finishedAt,
         record.lastError,
         record.compensatedAt,
+        record.compensationAttempt,
+        record.maxCompensationAttempts,
       );
     });
   }
