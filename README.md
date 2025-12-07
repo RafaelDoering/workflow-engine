@@ -19,42 +19,32 @@ A distributed workflow orchestration engine built with NestJS, Kafka, and Postgr
 ## Quick Start
 
 ```bash
-# Start infrastructure
-docker compose up -d
-
-# Apply migrations
-npx prisma migrate dev
-
-# Generate Prisma Client
-npx prisma generate
-
-# Seed database
-npm run seed
-
-# Start services (in separate terminals)
-npm run start:dev api
-npm run start:dev worker
-
-# Test workflow
-npm run test:workflow
+docker compose up
 ```
+
+After that, you can access the API Swagger UI at `http://localhost:3000/api` and:
+- Create a workflow
+- Start a workflow
+- Get a workflow instance and view its status and tasks
 
 ## API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
+| POST | `/workflows` | Create workflow |
 | POST | `/workflows/:id/start` | Start workflow |
-| GET | `/workflows/:id/instances` | List instances |
 | GET | `/workflows/:id/instances/:instanceId` | Instance details |
-| POST | `/workflows/:id/instances/:instanceId/cancel` | Cancel workflow |
+
+You can find the full API documentation at: `http://localhost:3000/api`
 
 ## Features
 
-- **Multi-step Workflows**: Tasks chain automatically (fetch-orders → create-invoice → pdf-process → send-email)
-- **Retry with Backoff**: Failed tasks retry with exponential backoff
-- **Idempotency**: Duplicate tasks are skipped
-- **Dead Letter Queue**: Permanently failed tasks marked as `DEAD_LETTER`
-- **Observability**: All state transitions logged to `TaskLog` table
+- **Multi-step Workflows**: Tasks execute in sequence (fetch-orders → create-invoice → pdf-process → send-email)
+- **Retry with Backoff**: Failed tasks are retried with exponential backoff
+- **Idempotency**: Duplicate tasks are automatically skipped
+- **Compensation**: When a task fails, the compensation process starts (SAGA pattern)
+- **Dead Letter Queue**: Permanently failed tasks are marked as `DEAD_LETTER`
+- **Observability**: All state transitions are logged in the `TaskLog` table
 
 ## Project Structure
 
@@ -68,9 +58,38 @@ prisma/
 └── schema.prisma  # Database schema
 ```
 
+## Technical Choices
+
+### Queue: Redpanda (Kafka without Zookeeper)
+- At-least-once + idempotency.
+- Redpanda is Zookeeper-less: simpler DX, fast startup, fully Kafka-compatible.
+- Horizontal scalability and partitions demonstrate real worker scaling.
+
+### Database: PostgreSQL
+- Strong consistency for workflow states.
+- Easy to extend into production-grade schema.
+
+### NestJS
+- Supports domain-driven organization and dependency injection.
+
+### Clean Architecture / Ports & Adapters
+- Infrastructure (DB, Kafka) is replaceable (less coupling).
+
 ## Tests
 
 ```bash
 npm run test
+```
+
+## Lint
+
+```bash
 npm run lint
 ```
+
+## Future Evolution
+
+- Add a workflow DSL (JSON or declarative YAML).
+- Introduce cron-based scheduler.
+- Implement dead letter queue.
+- Real integrations.
