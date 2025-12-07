@@ -31,4 +31,20 @@ export class TaskExecutor {
 
     return handler.execute(payload);
   }
+
+  async compensate(taskType: string, payload: TaskPayload): Promise<void> {
+    const handler = this.handlers.get(taskType);
+    if (!handler) {
+      throw new Error(`No handler found for task type: ${taskType}`);
+    }
+
+    if (!handler.compensate) {
+      console.log(
+        `[TaskExecutor] No compensation method for task type: ${taskType}`,
+      );
+      return;
+    }
+
+    return handler.compensate(payload);
+  }
 }

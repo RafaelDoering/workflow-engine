@@ -20,6 +20,22 @@ export class SendEmailHandler implements TaskHandler {
     return { ...payload, email };
   }
 
+  async compensate(payload: TaskPayload): Promise<void> {
+    if (!payload.email?.messageId) {
+      console.log('[SendEmailHandler] No email to compensate');
+      return;
+    }
+
+    console.log(
+      `[SendEmailHandler] Compensating: Sending cancellation email for ${payload.email.messageId}`,
+    );
+    await this.delay(300);
+
+    console.log(
+      `[SendEmailHandler] Compensation complete: Cancellation email sent for ${payload.email.messageId}`,
+    );
+  }
+
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }

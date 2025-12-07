@@ -53,6 +53,7 @@ model Task {
   startedAt          DateTime?
   finishedAt         DateTime?
   lastError          String?
+  compensatedAt      DateTime?
   logs               TaskLog[]
   retryEntries       RetryEntry[]
 }
@@ -63,6 +64,8 @@ enum TaskStatus {
   SUCCEEDED
   FAILED
   DEAD_LETTER
+  COMPENSATING
+  COMPENSATED
 }
 
 model TaskLog {

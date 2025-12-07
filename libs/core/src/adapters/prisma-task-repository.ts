@@ -29,6 +29,7 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
         startedAt: task.startedAt,
         finishedAt: task.finishedAt,
         lastError: task.lastError,
+        compensatedAt: task.compensatedAt,
       },
       create: {
         id: task.id,
@@ -44,6 +45,7 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
         startedAt: task.startedAt,
         finishedAt: task.finishedAt,
         lastError: task.lastError,
+        compensatedAt: task.compensatedAt,
       },
     });
   }
@@ -68,6 +70,7 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
         record.startedAt,
         record.finishedAt,
         record.lastError,
+        record.compensatedAt,
       );
     });
   }
@@ -95,6 +98,7 @@ export class PrismaTaskRepository implements TaskRepositoryPort {
         record.startedAt,
         record.finishedAt,
         record.lastError,
+        record.compensatedAt,
       );
     });
   }

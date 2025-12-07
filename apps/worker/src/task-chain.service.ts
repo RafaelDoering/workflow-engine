@@ -17,7 +17,7 @@ export class TaskChainService {
     private taskRepository: TaskRepositoryPort,
     @Inject('TaskQueuePort')
     private taskQueue: TaskQueuePort,
-  ) {}
+  ) { }
 
   async queueNextTask(
     completedTask: Task,

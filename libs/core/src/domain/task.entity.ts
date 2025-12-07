@@ -94,6 +94,8 @@ export enum TaskStatus {
   SUCCEEDED = 'SUCCEEDED',
   FAILED = 'FAILED',
   DEAD_LETTER = 'DEAD_LETTER',
+  COMPENSATING = 'COMPENSATING',
+  COMPENSATED = 'COMPENSATED',
 }
 
 export class Task {
@@ -110,5 +112,6 @@ export class Task {
     public startedAt: Date | null,
     public finishedAt: Date | null,
     public lastError: string | null,
+    public compensatedAt: Date | null = null,
   ) {}
 }

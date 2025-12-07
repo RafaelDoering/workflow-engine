@@ -28,7 +28,7 @@ export class WorkflowService {
     private workflowRepository: WorkflowRepositoryPort,
     @Inject('TaskRepository') private taskRepository: TaskRepositoryPort,
     @Inject('TaskQueuePort') private taskQueue: TaskQueuePort,
-  ) {}
+  ) { }
 
   async createWorkflow(dto: CreateWorkflowDto): Promise<{ id: string }> {
     const id = uuidv4();

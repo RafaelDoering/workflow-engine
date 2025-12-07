@@ -20,6 +20,22 @@ export class CreateInvoiceHandler implements TaskHandler {
     return { ...payload, invoice };
   }
 
+  async compensate(payload: TaskPayload): Promise<void> {
+    if (!payload.invoice?.invoiceId) {
+      console.log('[CreateInvoiceHandler] No invoice to compensate');
+      return;
+    }
+
+    console.log(
+      `[CreateInvoiceHandler] Compensating: Deleting invoice ${payload.invoice.invoiceId}`,
+    );
+    await this.delay(300);
+
+    console.log(
+      `[CreateInvoiceHandler] Compensation complete: Invoice ${payload.invoice.invoiceId} deleted`,
+    );
+  }
+
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }

@@ -8,12 +8,14 @@ import {
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
 import type { WorkflowInstanceRepositoryPort } from '@app/core/ports/workflow-instance-repository.port';
 import type { TaskLogRepositoryPort } from '@app/core/ports/task-log-repository.port';
+import { CompensationService } from './compensation.service';
 
 describe('TaskStateService', () => {
   let service: TaskStateService;
   let mockTaskRepository: jest.Mocked<TaskRepositoryPort>;
   let mockInstanceRepository: jest.Mocked<WorkflowInstanceRepositoryPort>;
   let mockTaskLogRepository: jest.Mocked<TaskLogRepositoryPort>;
+  let mockCompensationService: jest.Mocked<CompensationService>;
 
   beforeEach(async () => {
     mockTaskRepository = {
@@ -25,10 +27,15 @@ describe('TaskStateService', () => {
       findWorkflowInstanceById: jest.fn(),
       saveWorkflowInstance: jest.fn(),
       findByWorkflowId: jest.fn(),
+      findByStatus: jest.fn(),
     };
     mockTaskLogRepository = {
       createLog: jest.fn(),
     };
+    mockCompensationService = {
+      compensateWorkflow: jest.fn(),
+      compensateTask: jest.fn(),
+    } as unknown as jest.Mocked<CompensationService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -39,6 +46,7 @@ describe('TaskStateService', () => {
           useValue: mockInstanceRepository,
         },
         { provide: 'TaskLogRepository', useValue: mockTaskLogRepository },
+        { provide: CompensationService, useValue: mockCompensationService },
       ],
     }).compile();
 
@@ -205,6 +213,7 @@ describe('TaskStateService', () => {
       mockInstanceRepository.findWorkflowInstanceById.mockResolvedValue(
         instance,
       );
+      mockCompensationService.compensateWorkflow.mockResolvedValue();
 
       await service.markTaskDeadLetter(task, new Error('Permanent failure'));
 
@@ -217,6 +226,9 @@ describe('TaskStateService', () => {
       );
       expect(instance.status).toBe(WorkflowInstanceStatus.FAILED);
       expect(mockInstanceRepository.saveWorkflowInstance).toHaveBeenCalled();
+      expect(mockCompensationService.compensateWorkflow).toHaveBeenCalledWith(
+        task.instanceId,
+      );
     });
   });
   describe('checkWorkflowCompletion', () => {

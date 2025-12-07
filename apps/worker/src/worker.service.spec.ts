@@ -23,7 +23,7 @@ describe('WorkerService', () => {
         return Promise.resolve();
       }),
       publish: jest.fn(),
-    } as unknown as jest.Mocked<TaskQueuePort>;
+    };
 
     mockTaskExecutor = {
       execute: jest.fn(),

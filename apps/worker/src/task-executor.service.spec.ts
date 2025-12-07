@@ -8,9 +8,11 @@ import { SendEmailHandler } from './handlers/send-email.handler';
 describe('TaskExecutor', () => {
   let executor: TaskExecutor;
   let fetchOrdersHandler: FetchOrdersHandler;
+  let createInvoiceHandler: CreateInvoiceHandler;
+  let module: TestingModule;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       providers: [
         TaskExecutor,
         FetchOrdersHandler,
@@ -22,6 +24,8 @@ describe('TaskExecutor', () => {
 
     executor = module.get<TaskExecutor>(TaskExecutor);
     fetchOrdersHandler = module.get<FetchOrdersHandler>(FetchOrdersHandler);
+    createInvoiceHandler =
+      module.get<CreateInvoiceHandler>(CreateInvoiceHandler);
   });
 
   it('should be defined', () => {
@@ -61,6 +65,31 @@ describe('TaskExecutor', () => {
 
       expect(result).toHaveProperty('invoice');
       expect(result.invoice).toHaveProperty('invoiceId');
+    });
+  });
+
+  describe('compensate', () => {
+    it('should call compensate on create-invoice handler', async () => {
+      const payload = {
+        orderId: 'ORD-123',
+        invoice: {
+          invoiceId: 'INV-1',
+          customerId: 'CUST-1',
+          total: 100,
+          createdAt: new Date().toISOString(),
+        },
+      };
+      const spy = jest.spyOn(createInvoiceHandler, 'compensate');
+
+      await executor.compensate('create-invoice', payload);
+
+      expect(spy).toHaveBeenCalledWith(payload);
+    });
+
+    it('should throw error for unknown task type', async () => {
+      await expect(executor.compensate('unknown-task', {})).rejects.toThrow(
+        'No handler found for task type: unknown-task',
+      );
     });
   });
 });

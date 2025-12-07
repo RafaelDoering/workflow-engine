@@ -18,6 +18,22 @@ export class PdfProcessHandler implements TaskHandler {
     return { ...payload, pdf };
   }
 
+  async compensate(payload: TaskPayload): Promise<void> {
+    if (!payload.pdf?.pdfUrl) {
+      console.log('[PdfProcessHandler] No PDF to compensate');
+      return;
+    }
+
+    console.log(
+      `[PdfProcessHandler] Compensating: Deleting PDF ${payload.pdf.pdfUrl}`,
+    );
+    await this.delay(300);
+
+    console.log(
+      `[PdfProcessHandler] Compensation complete: PDF ${payload.pdf.pdfUrl} deleted`,
+    );
+  }
+
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }

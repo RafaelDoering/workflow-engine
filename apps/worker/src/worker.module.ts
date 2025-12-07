@@ -4,7 +4,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaClient } from '@app/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
-
 import { PrismaWorkflowRepository } from '@app/core/adapters/prisma-workflow-repository';
 import { PrismaWorkflowInstanceRepository } from '@app/core/adapters/prisma-workflow-instance-repository';
 import { PrismaTaskRepository } from '@app/core/adapters/prisma-task-repository';
@@ -15,13 +14,13 @@ import { TaskExecutor } from './task-executor.service';
 import { TaskStateService } from './task-state.service';
 import { TaskChainService } from './task-chain.service';
 import { RetryScheduler } from './retry-scheduler.service';
+import { CompensationService } from './compensation.service';
+import { CompensationScheduler } from './compensation-scheduler.service';
 import { FetchOrdersHandler } from './handlers/fetch-orders.handler';
 import { CreateInvoiceHandler } from './handlers/create-invoice.handler';
 import { PdfProcessHandler } from './handlers/pdf-process.handler';
 import { SendEmailHandler } from './handlers/send-email.handler';
-
 import { validate } from '@app/core/config/configuration';
-
 import { LoggerModule } from '@app/core/logger/logger.module';
 
 @Module({
@@ -36,6 +35,8 @@ import { LoggerModule } from '@app/core/logger/logger.module';
     TaskStateService,
     TaskChainService,
     RetryScheduler,
+    CompensationService,
+    CompensationScheduler,
     {
       provide: PrismaClient,
       useFactory: () => {

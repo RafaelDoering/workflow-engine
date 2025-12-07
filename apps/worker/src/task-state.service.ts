@@ -4,6 +4,7 @@ import { WorkflowInstanceStatus } from '@app/core/domain/workflow-instance.entit
 import type { TaskRepositoryPort } from '@app/core/ports/task-repository.port';
 import type { WorkflowInstanceRepositoryPort } from '@app/core/ports/workflow-instance-repository.port';
 import type { TaskLogRepositoryPort } from '@app/core/ports/task-log-repository.port';
+import { CompensationService } from './compensation.service';
 
 @Injectable()
 export class TaskStateService {
@@ -13,6 +14,7 @@ export class TaskStateService {
     private instanceRepository: WorkflowInstanceRepositoryPort,
     @Inject('TaskLogRepository')
     private taskLogRepository: TaskLogRepositoryPort,
+    private compensationService: CompensationService,
   ) {}
 
   async markTaskRunning(task: Task): Promise<void> {
@@ -98,6 +100,13 @@ export class TaskStateService {
     if (instance) {
       instance.status = WorkflowInstanceStatus.FAILED;
       await this.instanceRepository.saveWorkflowInstance(instance);
+
+      // Trigger compensation for all succeeded tasks in this workflow
+      // This ensures data consistency by rolling back partial work
+      console.log(
+        `[TaskStateService] Triggering compensation for instance ${task.instanceId} due to dead letter task`,
+      );
+      await this.compensationService.compensateWorkflow(task.instanceId);
     }
   }
 }
